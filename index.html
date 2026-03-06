@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yijia Zhao</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #d4724f;
+  --glass:  rgba(10, 8, 6, 0.30);
+  --border: rgba(255,255,255,0.09);
+  --text:   rgba(255,255,255,0.92);
+  --muted:  rgba(255,255,255,0.50);
+  --radius: 14px;
+  --blur:   14px;
+}
+html, body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro',Georgia,serif; color:var(--text); user-select:none; }
+
+#bg, #bg-next { position:fixed; inset:0; z-index:0; background-size:cover; background-position:center; }
+#bg-next { opacity:0; transition:opacity .8s ease; }
+#overlay { position:fixed; inset:0; z-index:1; background:linear-gradient(135deg,rgba(0,0,0,.52) 0%,rgba(0,0,0,.28) 50%,rgba(0,0,0,.48) 100%); transition:opacity .4s; }
+#wave-canvas { position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.55; }
+
+.page {
+  position:fixed; inset:0; z-index:10;
+  display:flex; align-items:center; justify-content:center;
+}
+.page-inner {
+  width: 100%; max-width: 900px;
+  height: 100%;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 1rem;
+  padding: 1.8rem 0 1.4rem;
+  pointer-events:all;
+}
+.col-left  { grid-column:1; grid-row:1; display:flex; flex-direction:column; gap:1rem; justify-content:center; }
+.col-right { grid-column:2; grid-row:1; display:flex; flex-direction:column; gap:1rem; justify-content:center; }
+.footer-row{ grid-column:1/-1; grid-row:2; }
+
+/* Glass — slightly more transparent */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* ── Location entry card ── */
+.loc-card {
+  display:inline-flex; align-items:center; gap:.75rem;
+  margin-top:.9rem; padding:.55rem .9rem;
+  background:rgba(255,255,255,.05); border:1px solid var(--border);
+  border-radius:8px; text-decoration:none; color:inherit;
+  transition:background .18s, border-color .18s;
+  max-width:260px;
+}
+.loc-card:hover { background:rgba(212,114,79,.12); border-color:rgba(212,114,79,.3); }
+.loc-pulse {
+  width:10px; height:10px; border-radius:50%; background:#ff5040; flex-shrink:0; position:relative;
+}
+.loc-pulse::after {
+  content:''; position:absolute; inset:-4px; border-radius:50%;
+  border:1px solid rgba(255,80,60,.5); animation:locpulse 1.8s ease-out infinite;
+}
+@keyframes locpulse { 0%{transform:scale(1);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
+.loc-name { font-family:'JetBrains Mono',monospace; font-size:.72rem; letter-spacing:.06em; color:var(--text); display:block; }
+.loc-sub  { font-family:'JetBrains Mono',monospace; font-size:.6rem; color:var(--accent); letter-spacing:.05em; display:block; margin-top:.1rem; }
+
+/* ── Identity ── */
+.id-card { padding:1.4rem 1.6rem; }
+.id-name { font-family:'Playfair Display',serif; font-size:clamp(1.6rem,3vw,2.4rem); font-weight:400; line-height:1.1; letter-spacing:-.01em; margin-bottom:.2rem; }
+.id-name em { color:var(--accent); font-style:italic; }
+.id-domain { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--accent); letter-spacing:.1em; margin-bottom:.8rem; }
+.id-bio { font-size:.97rem; color:var(--muted); line-height:1.65; font-style:italic; }
+.socials { display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap; }
+.social-btn { width:34px; height:34px; border-radius:8px; background:rgba(255,255,255,.07); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--muted); transition:background .15s, color .15s, border-color .15s; }
+.social-btn svg { width:14px; height:14px; }
+.social-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+/* ── Quote ── */
+.quote-card { padding:1rem 1.4rem; position:relative; }
+.quote-mark { font-family:'Playfair Display',serif; font-size:2.8rem; color:var(--accent); opacity:.4; line-height:1; position:absolute; top:.4rem; left:1rem; }
+.quote-text { font-style:italic; font-size:.92rem; color:var(--muted); line-height:1.6; padding-left:.6rem; margin-top:.35rem; }
+.quote-author { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.08em; color:var(--accent); text-transform:uppercase; margin-top:.5rem; padding-left:.6rem; }
+
+/* ── Clock ── */
+.clock-card { padding:1.1rem 1.4rem; display:flex; align-items:center; gap:1.4rem; }
+.clock-time { font-family:'JetBrains Mono',monospace; font-size:clamp(1.7rem,3vw,2.6rem); font-weight:300; letter-spacing:.04em; line-height:1; flex-shrink:0; }
+.colon { animation:blink 1s step-end infinite; display:inline-block; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.clock-date { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:.25rem; }
+.clock-day { font-family:'Crimson Pro',serif; font-style:italic; font-size:1rem; }
+.clock-tz { font-family:'JetBrains Mono',monospace; font-size:.57rem; color:var(--accent); letter-spacing:.05em; margin-top:.18rem; cursor:pointer; }
+.clock-tz:hover { text-decoration:underline; }
+
+/* ── Sites ── */
+.sites-label { font-family:'JetBrains Mono',monospace; font-size:.63rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:0 .2rem; display:flex; align-items:center; gap:.6rem; }
+.sites-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.sites-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+.site-card { padding:1rem 1.1rem; display:flex; flex-direction:column; gap:.2rem; text-decoration:none; color:inherit; transition:transform .18s, background .18s, border-color .18s; }
+.site-card:hover { transform:translateY(-2px); background:rgba(212,114,79,.15); border-color:rgba(212,114,79,.3); }
+.site-card-icon { font-size:1.2rem; margin-bottom:.15rem; line-height:1; }
+.site-card-name { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:400; }
+.site-card-url { font-family:'JetBrains Mono',monospace; font-size:.58rem; color:var(--accent); letter-spacing:.04em; }
+.site-card-desc { font-size:.8rem; color:var(--muted); line-height:1.4; margin-top:.08rem; }
+
+/* ── Map ── */
+
+
+/* ── Footer ── */
+.footer-row { display:flex; align-items:center; justify-content:space-between; }
+.footer-text { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; color:rgba(255,255,255,.28); text-transform:uppercase; }
+.footer-text a { color:rgba(255,255,255,.35); text-decoration:none; border-bottom:1px solid rgba(255,255,255,.15); padding-bottom:1px; transition:color .15s; }
+.footer-text a:hover { color:var(--accent); }
+.settings-btn { width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,.07); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); transition:background .15s, color .15s; }
+.settings-btn:hover { background:rgba(255,255,255,.14); color:var(--text); }
+.settings-btn svg { width:14px; height:14px; }
+
+/* ── Settings ── */
+.settings-panel { position:fixed; bottom:4rem; right:2.5rem; z-index:100; width:310px; padding:1.1rem 1.2rem; display:none; flex-direction:column; gap:1rem; max-height:80vh; overflow-y:auto; }
+.settings-panel.open { display:flex; }
+.s-title { font-family:'JetBrains Mono',monospace; font-size:.63rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding-bottom:.45rem; }
+.wallpaper-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem; }
+.wp-thumb { aspect-ratio:16/9; border-radius:6px; border:2px solid transparent; cursor:pointer; overflow:hidden; transition:border-color .15s, transform .15s; background-size:cover; background-position:center; position:relative; }
+.wp-thumb:hover { transform:scale(1.05); }
+.wp-thumb.active { border-color:var(--accent); }
+.wp-thumb-del { position:absolute; top:2px; right:2px; width:14px; height:14px; background:rgba(0,0,0,.6); border-radius:50%; font-size:9px; display:none; align-items:center; justify-content:center; color:#fff; cursor:pointer; line-height:1; }
+.wp-thumb:hover .wp-thumb-del { display:flex; }
+.upload-btn { width:100%; padding:.45rem; border-radius:8px; background:rgba(255,255,255,.06); border:1px dashed var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.63rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:background .15s, border-color .15s, color .15s; text-align:center; }
+.upload-btn:hover { background:rgba(212,114,79,.12); border-color:var(--accent); color:var(--accent); }
+#file-input { display:none; }
+.slider-row { display:flex; flex-direction:column; gap:.35rem; }
+.slider-label { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; }
+.slider-label span { color:var(--accent); }
+input[type=range] { width:100%; height:4px; border-radius:2px; appearance:none; background:rgba(255,255,255,.15); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { appearance:none; width:13px; height:13px; border-radius:50%; background:var(--accent); cursor:pointer; }
+.tz-row { display:flex; flex-direction:column; gap:.45rem; }
+.tz-input { width:100%; padding:.42rem .65rem; border-radius:8px; background:rgba(255,255,255,.08); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:.68rem; outline:none; transition:border-color .15s; }
+.tz-input:focus { border-color:var(--accent); }
+.tz-btns { display:flex; gap:.45rem; }
+.tz-btn { flex:1; padding:.32rem .5rem; border-radius:6px; background:rgba(255,255,255,.07); border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; transition:background .15s, color .15s, border-color .15s; text-align:center; }
+.tz-btn:hover { background:rgba(212,114,79,.15); color:var(--accent); border-color:rgba(212,114,79,.35); }
+.tz-btn.primary { background:rgba(212,114,79,.2); color:var(--accent); border-color:rgba(212,114,79,.4); }
+.tz-btn.primary:hover { background:var(--accent); color:#fff; }
+.settings-close { align-self:flex-end; font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); cursor:pointer; background:none; border:none; transition:color .15s; padding:0; }
+.settings-close:hover { color:var(--accent); }
+
+.wp-gradient-1 { background:linear-gradient(135deg,#1a0a2e 0%,#2d1b69 40%,#11998e 100%); }
+.wp-gradient-2 { background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%); }
+.wp-gradient-3 { background:linear-gradient(135deg,#141e30 0%,#243b55 100%); }
+.wp-gradient-4 { background:linear-gradient(135deg,#1a0533 0%,#6a003a 50%,#ff6e00 100%); }
+.wp-gradient-5 { background:linear-gradient(135deg,#0d1117 0%,#161b22 50%,#21262d 100%); }
+</style>
+</head>
+<body>
+
+<div id="bg" class="wp-gradient-4"></div>
+<div id="bg-next"></div>
+<div id="overlay"></div>
+<canvas id="wave-canvas"></canvas>
+<input type="file" id="file-input" accept="image/*">
+
+<div class="settings-panel glass" id="settings">
+  <div class="s-title">Wallpaper</div>
+  <div class="wallpaper-grid" id="wp-grid"></div>
+  <label class="upload-btn" for="file-input">＋ Upload image</label>
+  <div class="s-title">Display</div>
+  <div class="slider-row"><div class="slider-label">Blur <span id="lbl-blur">8px</span></div><input type="range" id="sl-blur" min="0" max="30" value="8"></div>
+  <div class="slider-row"><div class="slider-label">Brightness <span id="lbl-bright">85%</span></div><input type="range" id="sl-bright" min="20" max="100" value="85"></div>
+  <div class="slider-row"><div class="slider-label">Overlay opacity <span id="lbl-overlay">55%</span></div><input type="range" id="sl-overlay" min="0" max="90" value="55"></div>
+  <div class="slider-row"><div class="slider-label">Card opacity <span id="lbl-card">30%</span></div><input type="range" id="sl-card" min="0" max="80" value="30"></div>
+  <div class="s-title">Timezone</div>
+  <div class="tz-row">
+    <input class="tz-input" id="tz-input" placeholder="e.g. Asia/Shanghai" spellcheck="false">
+    <div class="tz-btns">
+      <div class="tz-btn" onclick="resetTz()">Reset to local</div>
+      <div class="tz-btn primary" onclick="applyTz()">Apply</div>
+    </div>
+  </div>
+  <button class="settings-close" onclick="toggleSettings()">Close ✕</button>
+</div>
+
+<div class="page">
+<div class="page-inner">
+  <div class="col-left">
+    <div class="id-card glass">
+      <div class="id-name">Yijia<em> Zhao</em></div>
+      <div class="id-domain">yijialog.org</div>
+      <div class="id-bio">High school student from Shenyang, China.<br>Physics · Mathematics · Philosophy.</div>
+      <a class="loc-card" href="map.html">
+        <span class="loc-pulse"></span>
+        <span class="loc-text">
+          <span class="loc-name">Shenyang, China</span>
+          <span class="loc-sub">View location trace →</span>
+        </span>
+      </a>
+      <nav class="socials">
+        <a class="social-btn" href="https://github.com/Yijia-phys" target="_blank"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+        <a class="social-btn" href="/cdn-cgi/l/email-protection#ee8b8d8681ae978784878f828189c0819c89"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+        <a class="social-btn" href="https://orcid.org/0009-0004-5515-2981" target="_blank"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0M5.44 11.5H4.22V4.5h1.22zm-.61-8.07a.77.77 0 1 1 0-1.54.77.77 0 0 1 0 1.54M12 8.18c0 2.07-1.52 3.32-3.74 3.32H6.5V4.5h1.76C10.48 4.5 12 5.72 12 8.18m-1.28 0c0-1.56-.9-2.57-2.5-2.57h-.5v5.14h.5c1.6 0 2.5-.98 2.5-2.57"/></svg></a>
+      </nav>
+    </div>
+    <div class="quote-card glass">
+      <div class="quote-mark">"</div>
+      <div class="quote-text">The first principle is that you must not fool yourself — and you are the easiest person to fool.</div>
+      <div class="quote-author">— Richard Feynman</div>
+    </div>
+  </div>
+
+  <div class="col-right">
+    <div class="clock-card glass">
+      <a class="clock-time" id="clock-time" href="clock.html" style="text-decoration:none;color:inherit;cursor:pointer;" title="Open focus timer">00<span class="colon">:</span>00<span class="colon">:</span>00</a>
+      <div class="clock-info">
+        <div class="clock-date" id="clock-date">—</div>
+        <div class="clock-day" id="clock-day">—</div>
+        <div class="clock-tz" id="clock-tz" onclick="toggleSettings()">Local time</div>
+      </div>
+    </div>
+    <div class="sites-label">My Sites</div>
+    <div class="sites-grid">
+      <a class="site-card glass" href="https://blog.yijialog.org" target="_blank">
+        <div class="site-card-icon">✦</div>
+        <div class="site-card-name">Blog</div>
+        <div class="site-card-url">blog.yijialog.org</div>
+        <div class="site-card-desc">Posts on physics, math &amp; philosophy</div>
+      </a>
+      <a class="site-card glass" href="https://note.yijialog.org" target="_blank">
+        <div class="site-card-icon">◈</div>
+        <div class="site-card-name">Notes</div>
+        <div class="site-card-url">note.yijialog.org</div>
+        <div class="site-card-desc">Study notes and reference material</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <span class="footer-text">© 2026 Yijia Zhao &nbsp;·&nbsp; <a href="https://pages.github.com" target="_blank">GitHub Pages</a></span>
+    <div class="settings-btn" onclick="toggleSettings()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.892 3.433-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.892-1.64-.901-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52z"/></svg>
+    </div>
+  </div>
+</div><!-- page-inner -->
+</div>
+
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── Helpers ──────────────────────────────────────────────────────────
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function load(k,def){try{var v=localStorage.getItem(k);return v==null?def:JSON.parse(v);}catch(e){return def;}}
+
+// ── Wallpapers ───────────────────────────────────────────────────────
+var PRESETS=[
+  {type:'gradient',cls:'wp-gradient-1',label:'Nebula'},
+  {type:'gradient',cls:'wp-gradient-2',label:'Ocean'},
+  {type:'gradient',cls:'wp-gradient-3',label:'Midnight'},
+  {type:'gradient',cls:'wp-gradient-4',label:'Ember'},
+  {type:'gradient',cls:'wp-gradient-5',label:'Void'},
+];
+var userWps=load('user-wps',[]);
+var currentWp=load('current-wp','preset-3');
+var bg=document.getElementById('bg');
+var bgNext=document.getElementById('bg-next');
+function allWps(){return PRESETS.map(function(p,i){return Object.assign({id:'preset-'+i},p);}).concat(userWps.map(function(u){return {id:u.id,type:'image',src:u.dataUrl};}));}
+function applyWpToEl(el,wp){el.className='';el.style.backgroundImage='';if(wp.type==='gradient'){el.classList.add(wp.cls);}else{el.style.backgroundImage='url('+wp.src+')';el.style.backgroundSize='cover';}}
+function switchWallpaper(id){
+  if(id===currentWp)return;
+  var wp=allWps().find(function(w){return w.id===id;});if(!wp)return;
+  applyWpToEl(bgNext,wp);bgNext.style.opacity='1';
+  setTimeout(function(){applyWpToEl(bg,wp);bgNext.style.opacity='0';currentWp=id;save('current-wp',id);refreshThumbs();},820);
+}
+function deleteUserWp(id,e){e.stopPropagation();userWps=userWps.filter(function(u){return u.id!==id;});save('user-wps',userWps);if(currentWp===id)switchWallpaper('preset-3');refreshThumbs();}
+function refreshThumbs(){
+  var grid=document.getElementById('wp-grid');grid.innerHTML='';
+  allWps().forEach(function(wp){
+    var t=document.createElement('div');t.className='wp-thumb'+(wp.id===currentWp?' active':'');
+    if(wp.type==='gradient'){t.classList.add(wp.cls);t.title=wp.label||'';}else{t.style.backgroundImage='url('+wp.src+')';}
+    t.onclick=function(){switchWallpaper(wp.id);};
+    if(wp.type==='image'){var del=document.createElement('div');del.className='wp-thumb-del';del.textContent='✕';del.onclick=function(e){deleteUserWp(wp.id,e);};t.appendChild(del);}
+    grid.appendChild(t);
+  });
+}
+document.getElementById('file-input').addEventListener('change',function(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){var id='user-'+Date.now();userWps.push({id:id,dataUrl:ev.target.result});if(userWps.length>8)userWps=userWps.slice(-8);save('user-wps',userWps);refreshThumbs();switchWallpaper(id);};
+  reader.readAsDataURL(file);e.target.value='';
+});
+(function(){var wp=allWps().find(function(w){return w.id===currentWp;})||allWps()[3];applyWpToEl(bg,wp);currentWp=wp.id;})();
+refreshThumbs();
+
+// ── Display sliders ──────────────────────────────────────────────────
+var dispCfg=load('display',{blur:8,bright:85,overlay:55,card:30});
+function applyDisplay(){
+  bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';
+  document.getElementById('overlay').style.opacity=dispCfg.overlay/100;
+  document.documentElement.style.setProperty('--glass','rgba(10,8,6,'+(dispCfg.card/100)+')');
+  document.getElementById('sl-blur').value=dispCfg.blur;
+  document.getElementById('sl-bright').value=dispCfg.bright;
+  document.getElementById('sl-overlay').value=dispCfg.overlay;
+  document.getElementById('sl-card').value=dispCfg.card;
+  document.getElementById('lbl-blur').textContent=dispCfg.blur+'px';
+  document.getElementById('lbl-bright').textContent=dispCfg.bright+'%';
+  document.getElementById('lbl-overlay').textContent=dispCfg.overlay+'%';
+  document.getElementById('lbl-card').textContent=dispCfg.card+'%';
+}
+applyDisplay();
+document.getElementById('sl-blur').oninput=function(){dispCfg.blur=+this.value;document.getElementById('lbl-blur').textContent=this.value+'px';bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';save('display',dispCfg);};
+document.getElementById('sl-bright').oninput=function(){dispCfg.bright=+this.value;document.getElementById('lbl-bright').textContent=this.value+'%';bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';save('display',dispCfg);};
+document.getElementById('sl-overlay').oninput=function(){dispCfg.overlay=+this.value;document.getElementById('lbl-overlay').textContent=this.value+'%';document.getElementById('overlay').style.opacity=dispCfg.overlay/100;save('display',dispCfg);};
+document.getElementById('sl-card').oninput=function(){dispCfg.card=+this.value;document.getElementById('lbl-card').textContent=this.value+'%';document.documentElement.style.setProperty('--glass','rgba(10,8,6,'+(dispCfg.card/100)+')');save('display',dispCfg);};;
+
+// ── Timezone ─────────────────────────────────────────────────────────
+var currentTz=load('timezone','');
+if(currentTz){document.getElementById('tz-input').value=currentTz;document.getElementById('clock-tz').textContent=currentTz;}
+function applyTz(){var val=document.getElementById('tz-input').value.trim();if(!val)return;try{new Intl.DateTimeFormat('en',{timeZone:val}).format(new Date());currentTz=val;save('timezone',val);document.getElementById('clock-tz').textContent=val;}catch(e){document.getElementById('tz-input').style.borderColor='#e05';setTimeout(function(){document.getElementById('tz-input').style.borderColor='';},1200);}}
+function resetTz(){currentTz='';save('timezone','');document.getElementById('tz-input').value='';document.getElementById('clock-tz').textContent='Local time';}
+document.getElementById('tz-input').addEventListener('keydown',function(e){if(e.key==='Enter')applyTz();});
+
+// ── Clock ─────────────────────────────────────────────────────────────
+var DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function updateClock(){
+  var now=new Date(),hh,mm,ss,dateStr,dayStr;
+  if(currentTz){try{var pts=new Intl.DateTimeFormat('en',{timeZone:currentTz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,weekday:'long',month:'short',day:'numeric',year:'numeric'}).formatToParts(now);var get=function(t){var p=pts.find(function(x){return x.type===t;});return p?p.value:'';};hh=get('hour');mm=get('minute');ss=get('second');dateStr=get('month')+' '+get('day')+', '+get('year');dayStr=get('weekday');}catch(e){currentTz='';save('timezone','');}}
+  if(!currentTz){hh=String(now.getHours()).padStart(2,'0');mm=String(now.getMinutes()).padStart(2,'0');ss=String(now.getSeconds()).padStart(2,'0');dateStr=MONTHS[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();dayStr=DAYS[now.getDay()];}
+  document.getElementById('clock-time').innerHTML=hh+'<span class="colon">:</span>'+mm+'<span class="colon">:</span>'+ss;
+  document.getElementById('clock-date').textContent=dateStr;document.getElementById('clock-day').textContent=dayStr;
+}
+updateClock();setInterval(updateClock,1000);
+
+// ── Settings ──────────────────────────────────────────────────────────
+function toggleSettings(){document.getElementById('settings').classList.toggle('open');}
+document.addEventListener('click',function(e){var panel=document.getElementById('settings');if(!panel.contains(e.target)&&!e.target.closest('.settings-btn'))panel.classList.remove('open');});
+
+// ── Wave canvas ───────────────────────────────────────────────────────
+var wc=document.getElementById('wave-canvas'),wctx=wc.getContext('2d'),wW,wH;
+function wResize(){wW=wc.width=window.innerWidth;wH=wc.height=window.innerHeight;}
+wResize();window.addEventListener('resize',wResize);
+var WAVES=[{A:55,k:.010,omega:.55,phi:0.0,r:212,g:114,b:79},{A:32,k:.018,omega:.85,phi:1.8,r:100,g:160,b:200},{A:20,k:.030,omega:1.20,phi:3.5,r:180,g:140,b:210}];
+function drawWaves(t){
+  wctx.clearRect(0,0,wW,wH);var cy=wH*.72,halfW=wW*.5,envW=wW*.42;
+  for(var wi=0;wi<WAVES.length;wi++){var w=WAVES[wi];
+    wctx.beginPath();for(var x=0;x<=wW;x+=2){var dx=(x-halfW)/envW;var env=Math.exp(-(dx*dx));var y=cy+w.A*env*Math.sin(w.k*(x-halfW)+w.omega*t+w.phi);if(x===0){wctx.moveTo(x,y);}else{wctx.lineTo(x,y);}}
+    wctx.strokeStyle='rgba('+w.r+','+w.g+','+w.b+',0.45)';wctx.lineWidth=1.5;wctx.stroke();
+    wctx.beginPath();for(var x2=0;x2<=wW;x2+=2){var dx2=(x2-halfW)/envW;var env2=Math.exp(-(dx2*dx2));var y2=cy+w.A*env2*Math.sin(w.k*(x2-halfW)+w.omega*t+w.phi);if(x2===0){wctx.moveTo(x2,y2);}else{wctx.lineTo(x2,y2);}}
+    wctx.lineTo(wW,wH);wctx.lineTo(0,wH);wctx.closePath();var grad=wctx.createLinearGradient(0,cy-60,0,cy+100);grad.addColorStop(0,'rgba('+w.r+','+w.g+','+w.b+',0.04)');grad.addColorStop(1,'rgba('+w.r+','+w.g+','+w.b+',0.00)');wctx.fillStyle=grad;wctx.fill();
+  }
+}
+function loop(ts){drawWaves(ts*.001);requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
