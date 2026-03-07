@@ -18,7 +18,6 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro',
 #bg-next { opacity:0; transition:opacity .8s; }
 #overlay  { position:fixed; inset:0; z-index:1; background:linear-gradient(135deg,rgba(0,0,0,.52) 0%,rgba(0,0,0,.28) 50%,rgba(0,0,0,.48) 100%); transition:opacity .4s; }
 #wave-canvas { position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.55; }
-.glass { background:var(--glass); backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur)); border:1px solid var(--border); border-radius:var(--radius); }
 
 /* ── Fixed corners ── */
 #back-btn {
@@ -120,36 +119,10 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro',
   max-height:75vh; overflow-y:auto;
 }
 #pomo-settings.open, .settings-panel.open { display:flex; }
-.ps-title,.s-title { font-family:'JetBrains Mono',monospace; font-size:.63rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding-bottom:.45rem; }
-.ps-row,.slider-row { display:flex; flex-direction:column; gap:.35rem; }
-.ps-label,.slider-label { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; }
-.ps-label span,.slider-label span { color:var(--accent); }
-input[type=range] { width:100%; height:4px; border-radius:2px; appearance:none; background:rgba(255,255,255,.15); outline:none; cursor:pointer; }
-input[type=range]::-webkit-slider-thumb { appearance:none; width:13px; height:13px; border-radius:50%; background:var(--accent); cursor:pointer; }
-.ps-close,.settings-close { align-self:flex-end; font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); cursor:pointer; background:none; border:none; transition:color .15s; }
-.ps-close:hover,.settings-close:hover { color:var(--accent); }
-.wallpaper-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem; }
-.wp-thumb { aspect-ratio:16/9; border-radius:6px; border:2px solid transparent; cursor:pointer; overflow:hidden; transition:border-color .15s,transform .15s; background-size:cover; background-position:center; position:relative; }
-.wp-thumb:hover { transform:scale(1.05); }
-.wp-thumb.active { border-color:var(--accent); }
-.wp-thumb-del { position:absolute; top:2px; right:2px; width:14px; height:14px; background:rgba(0,0,0,.6); border-radius:50%; font-size:9px; display:none; align-items:center; justify-content:center; color:#fff; cursor:pointer; line-height:1; }
-.wp-thumb:hover .wp-thumb-del { display:flex; }
-.upload-btn { width:100%; padding:.45rem; border-radius:8px; background:rgba(255,255,255,.06); border:1px dashed var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.63rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:background .15s,border-color .15s,color .15s; text-align:center; }
-.upload-btn:hover { background:rgba(212,114,79,.12); border-color:var(--accent); color:var(--accent); }
-.tz-input { width:100%; padding:.4rem .65rem; border-radius:8px; background:rgba(255,255,255,.08); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:.68rem; outline:none; transition:border-color .15s; }
-.tz-input:focus { border-color:var(--accent); }
-.tz-btns { display:flex; gap:.45rem; }
-.tz-btn { flex:1; padding:.32rem .5rem; border-radius:6px; background:rgba(255,255,255,.07); border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; transition:background .15s,color .15s,border-color .15s; text-align:center; }
-.tz-btn:hover { background:rgba(212,114,79,.15); color:var(--accent); border-color:rgba(212,114,79,.35); }
-.tz-btn.tp { background:rgba(212,114,79,.2); color:var(--accent); border-color:rgba(212,114,79,.4); }
-.tz-btn.tp:hover { background:var(--accent); color:#fff; }
-#file-input { display:none; }
-.wp-gradient-1{background:linear-gradient(135deg,#1a0a2e 0%,#2d1b69 40%,#11998e 100%);}
-.wp-gradient-2{background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%);}
-.wp-gradient-3{background:linear-gradient(135deg,#141e30 0%,#243b55 100%);}
-.wp-gradient-4{background:linear-gradient(135deg,#1a0533 0%,#6a003a 50%,#ff6e00 100%);}
-.wp-gradient-5{background:linear-gradient(135deg,#0d1117 0%,#161b22 50%,#21262d 100%);}
 .hidden { display:none !important; }
+
+/* settings panel position */
+#pomo-settings, .settings-panel { bottom:4.6rem; right:1.8rem; width:310px; }
 </style>
 </head>
 <body>
@@ -236,146 +209,239 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:13px; height:13
   <div class="ctrl-btn danger"  id="btn-reset" onclick="resetTimer()">Reset</div>
 </div>
 
+<script src="shared.js"></script>
+<script>SharedUI.injectStyles();</script>
 <script>
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-function load(k,def){try{var v=localStorage.getItem(k);return v==null?def:JSON.parse(v);}catch(e){return def;}}
-function fmt(s){var m=Math.floor(s/60),sec=s%60;return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');}
+function fmt(s) { var m = Math.floor(s / 60), sec = s % 60; return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0'); }
 
-// ── Wallpapers ──────────────────────────────────────────────────────
-var PRESETS=[{type:'gradient',cls:'wp-gradient-1',label:'Nebula'},{type:'gradient',cls:'wp-gradient-2',label:'Ocean'},{type:'gradient',cls:'wp-gradient-3',label:'Midnight'},{type:'gradient',cls:'wp-gradient-4',label:'Ember'},{type:'gradient',cls:'wp-gradient-5',label:'Void'}];
-var userWps=load('user-wps',[]);
-var currentWp=load('current-wp','preset-3');
-var bg=document.getElementById('bg'),bgNext=document.getElementById('bg-next');
-function allWps(){return PRESETS.map(function(p,i){return Object.assign({id:'preset-'+i},p);}).concat(userWps.map(function(u){return{id:u.id,type:'image',src:u.dataUrl};}));}
-function applyWpToEl(el,wp){el.className='';el.style.backgroundImage='';if(wp.type==='gradient'){el.classList.add(wp.cls);}else{el.style.backgroundImage='url('+wp.src+')';el.style.backgroundSize='cover';}}
-function switchWallpaper(id){if(id===currentWp)return;var wp=allWps().find(function(w){return w.id===id;});if(!wp)return;applyWpToEl(bgNext,wp);bgNext.style.opacity='1';setTimeout(function(){applyWpToEl(bg,wp);bgNext.style.opacity='0';currentWp=id;save('current-wp',id);refreshThumbs();},820);}
-function deleteUserWp(id,e){e.stopPropagation();userWps=userWps.filter(function(u){return u.id!==id;});save('user-wps',userWps);if(currentWp===id)switchWallpaper('preset-3');refreshThumbs();}
-function refreshThumbs(){var grid=document.getElementById('wp-grid');grid.innerHTML='';allWps().forEach(function(wp){var t=document.createElement('div');t.className='wp-thumb'+(wp.id===currentWp?' active':'');if(wp.type==='gradient'){t.classList.add(wp.cls);t.title=wp.label||'';}else{t.style.backgroundImage='url('+wp.src+')';}t.onclick=function(){switchWallpaper(wp.id);};if(wp.type==='image'){var del=document.createElement('div');del.className='wp-thumb-del';del.textContent='✕';del.onclick=function(e){deleteUserWp(wp.id,e);};t.appendChild(del);}grid.appendChild(t);});}
-document.getElementById('file-input').addEventListener('change',function(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){var id='user-'+Date.now();userWps.push({id:id,dataUrl:ev.target.result});if(userWps.length>8)userWps=userWps.slice(-8);save('user-wps',userWps);refreshThumbs();switchWallpaper(id);};reader.readAsDataURL(file);e.target.value='';});
-(function(){var wp=allWps().find(function(w){return w.id===currentWp;})||allWps()[3];applyWpToEl(bg,wp);currentWp=wp.id;})();
-refreshThumbs();
+// ── Boot ─────────────────────────────────────────────────────────────
+SharedUI.initWallpaper();
+SharedUI.initDisplay(['blur', 'bright', 'overlay', 'ui']);
+SharedUI.initWaves();
+var toggleMainSettings = SharedUI.initSettings('main-settings', '#settings-gear');
 
-// ── Display sliders ─────────────────────────────────────────────────
-var dispCfg=load('display',{blur:8,bright:85,overlay:55,card:30,ui:100});
-function applyDisplay(){
-  bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';
-  document.getElementById('overlay').style.opacity=dispCfg.overlay/100;
-  document.documentElement.style.setProperty('--glass','rgba(10,8,6,'+(dispCfg.card/100)+')');
-  document.documentElement.style.setProperty('--ui-opacity',dispCfg.ui/100);
-  document.getElementById('sl-blur').value=dispCfg.blur; document.getElementById('lbl-blur').textContent=dispCfg.blur+'px';
-  document.getElementById('sl-bright').value=dispCfg.bright; document.getElementById('lbl-bright').textContent=dispCfg.bright+'%';
-  document.getElementById('sl-overlay').value=dispCfg.overlay; document.getElementById('lbl-overlay').textContent=dispCfg.overlay+'%';
-  document.getElementById('sl-ui').value=dispCfg.ui; document.getElementById('lbl-ui').textContent=dispCfg.ui+'%';
+// ── Timezone ─────────────────────────────────────────────────────────
+var currentTz = SharedUI.load('timezone', '');
+if (currentTz) document.getElementById('tz-input').value = currentTz;
+function applyTz() {
+  var val = document.getElementById('tz-input').value.trim();
+  if (!val) return;
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: val }).format(new Date());
+    currentTz = val;
+    SharedUI.save('timezone', val);
+    updateClocks();
+  } catch(e) {
+    var inp = document.getElementById('tz-input');
+    inp.style.borderColor = '#e05';
+    setTimeout(function () { inp.style.borderColor = ''; }, 1200);
+  }
 }
-applyDisplay();
-document.getElementById('sl-blur').oninput=function(){dispCfg.blur=+this.value;document.getElementById('lbl-blur').textContent=this.value+'px';bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';save('display',dispCfg);};
-document.getElementById('sl-bright').oninput=function(){dispCfg.bright=+this.value;document.getElementById('lbl-bright').textContent=this.value+'%';bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';save('display',dispCfg);};
-document.getElementById('sl-overlay').oninput=function(){dispCfg.overlay=+this.value;document.getElementById('lbl-overlay').textContent=this.value+'%';document.getElementById('overlay').style.opacity=dispCfg.overlay/100;save('display',dispCfg);};
-document.getElementById('sl-ui').oninput=function(){dispCfg.ui=+this.value;document.getElementById('lbl-ui').textContent=this.value+'%';document.documentElement.style.setProperty('--ui-opacity',dispCfg.ui/100);save('display',dispCfg);};
-
-// ── Timezone ────────────────────────────────────────────────────────
-var currentTz=load('timezone','');
-if(currentTz) document.getElementById('tz-input').value=currentTz;
-function applyTz(){var val=document.getElementById('tz-input').value.trim();if(!val)return;try{new Intl.DateTimeFormat('en',{timeZone:val}).format(new Date());currentTz=val;save('timezone',val);updateClocks();}catch(e){var inp=document.getElementById('tz-input');inp.style.borderColor='#e05';setTimeout(function(){inp.style.borderColor='';},1200);}}
-function resetTz(){currentTz='';save('timezone','');document.getElementById('tz-input').value='';updateClocks();}
-document.getElementById('tz-input').addEventListener('keydown',function(e){if(e.key==='Enter')applyTz();});
-
-// ── Live clock (HH:MM, no seconds) ─────────────────────────────────
-function getNowHHMM(){
-  var now=new Date();
-  if(currentTz){try{var pts=new Intl.DateTimeFormat('en',{timeZone:currentTz,hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(now);var get=function(t){var p=pts.find(function(x){return x.type===t;});return p?p.value:'';};return get('hour')+':'+get('minute');}catch(e){}}
-  return String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+function resetTz() {
+  currentTz = '';
+  SharedUI.save('timezone', '');
+  document.getElementById('tz-input').value = '';
+  updateClocks();
 }
-function updateClocks(){
-  var hhmm=getNowHHMM(), tz=currentTz||'Local';
-  document.getElementById('pill-clock').textContent=hhmm;
-  document.getElementById('clock-pill-time').textContent=hhmm;
-  document.getElementById('clock-pill-tz').textContent=tz;
+document.getElementById('tz-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') applyTz(); });
+
+// ── Live clock (HH:MM) ────────────────────────────────────────────────
+function getNowHHMM() {
+  var now = new Date();
+  if (currentTz) {
+    try {
+      var pts = new Intl.DateTimeFormat('en', { timeZone: currentTz, hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(now);
+      var get = function (t) { var p = pts.find(function (x) { return x.type === t; }); return p ? p.value : ''; };
+      return get('hour') + ':' + get('minute');
+    } catch(e) {}
+  }
+  return String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+function updateClocks() {
+  var hhmm = getNowHHMM(), tz = currentTz || 'Local';
+  document.getElementById('pill-clock').textContent      = hhmm;
+  document.getElementById('clock-pill-time').textContent = hhmm;
+  document.getElementById('clock-pill-tz').textContent   = tz;
 }
 updateClocks();
-setInterval(updateClocks,10000);
+setInterval(updateClocks, 10000);
 
-// ── Settings panels ─────────────────────────────────────────────────
-function toggleMainSettings(){document.getElementById('main-settings').classList.toggle('open');document.getElementById('pomo-settings').classList.remove('open');}
-function openPomoSettings(e){e.stopPropagation();var ps=document.getElementById('pomo-settings');if(ps.classList.contains('open')){ps.classList.remove('open');return;}document.getElementById('main-settings').classList.remove('open');ps.classList.add('open');}
-document.getElementById('ps-close-btn').onclick=function(){document.getElementById('pomo-settings').classList.remove('open');};
-document.addEventListener('click',function(e){
-  var ms=document.getElementById('main-settings'),ps=document.getElementById('pomo-settings');
-  if(ms.classList.contains('open')&&!ms.contains(e.target)&&!e.target.closest('#settings-gear')) ms.classList.remove('open');
-  if(ps.classList.contains('open')&&!ps.contains(e.target)&&!e.target.closest('#pill')&&!e.target.closest('#ring-btn')) ps.classList.remove('open');
+// ── Settings panels ──────────────────────────────────────────────────
+function openPomoSettings(e) {
+  e.stopPropagation();
+  var ps = document.getElementById('pomo-settings');
+  if (ps.classList.contains('open')) { ps.classList.remove('open'); return; }
+  document.getElementById('main-settings').classList.remove('open');
+  ps.classList.add('open');
+}
+document.getElementById('ps-close-btn').onclick = function () { document.getElementById('pomo-settings').classList.remove('open'); };
+document.addEventListener('click', function (e) {
+  var ps = document.getElementById('pomo-settings');
+  if (ps.classList.contains('open') && !ps.contains(e.target) && !e.target.closest('#pill') && !e.target.closest('#ring-btn')) {
+    ps.classList.remove('open');
+  }
 });
 
-// ── Wave canvas ─────────────────────────────────────────────────────
-var wc=document.getElementById('wave-canvas'),wctx=wc.getContext('2d'),wW,wH;
-function wResize(){wW=wc.width=window.innerWidth;wH=wc.height=window.innerHeight;}
-wResize();window.addEventListener('resize',wResize);
-var WAVES=[{A:55,k:.010,omega:.55,phi:0.0,r:212,g:114,b:79},{A:32,k:.018,omega:.85,phi:1.8,r:100,g:160,b:200},{A:20,k:.030,omega:1.20,phi:3.5,r:180,g:140,b:210}];
-function drawWaves(t){wctx.clearRect(0,0,wW,wH);var cy=wH*.72,halfW=wW*.5,envW=wW*.42;for(var wi=0;wi<WAVES.length;wi++){var w=WAVES[wi];wctx.beginPath();for(var x=0;x<=wW;x+=2){var dx=(x-halfW)/envW,env=Math.exp(-(dx*dx)),y=cy+w.A*env*Math.sin(w.k*(x-halfW)+w.omega*t+w.phi);if(x===0)wctx.moveTo(x,y);else wctx.lineTo(x,y);}wctx.strokeStyle='rgba('+w.r+','+w.g+','+w.b+',0.45)';wctx.lineWidth=1.5;wctx.stroke();wctx.beginPath();for(var x2=0;x2<=wW;x2+=2){var dx2=(x2-halfW)/envW,env2=Math.exp(-(dx2*dx2)),y2=cy+w.A*env2*Math.sin(w.k*(x2-halfW)+w.omega*t+w.phi);if(x2===0)wctx.moveTo(x2,y2);else wctx.lineTo(x2,y2);}wctx.lineTo(wW,wH);wctx.lineTo(0,wH);wctx.closePath();var grad=wctx.createLinearGradient(0,cy-60,0,cy+100);grad.addColorStop(0,'rgba('+w.r+','+w.g+','+w.b+',0.04)');grad.addColorStop(1,'rgba('+w.r+','+w.g+','+w.b+',0.00)');wctx.fillStyle=grad;wctx.fill();}}
-(function loop(ts){drawWaves((ts||0)*.001);requestAnimationFrame(loop);})();
+// ── Sound alerts (Web Audio API — no external files needed) ──────────
+var _audioCtx = null;
+function _getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+// Focus done → two low warm pulses (time to rest)
+function playFocusDone() {
+  var ctx = _getAudioCtx();
+  [0, 0.38].forEach(function (delay) {
+    var osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, ctx.currentTime + delay);
+    osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + delay + 0.35);
+    gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+    gain.gain.linearRampToValueAtTime(0.38, ctx.currentTime + delay + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.7);
+    osc.start(ctx.currentTime + delay); osc.stop(ctx.currentTime + delay + 0.75);
+  });
+}
+// Break done → three rising chime tones (back to work!)
+function playBreakDone() {
+  var ctx = _getAudioCtx();
+  [0, 0.22, 0.44].forEach(function (delay, i) {
+    var osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime([660, 784, 988][i], ctx.currentTime + delay);
+    gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+    gain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + delay + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.55);
+    osc.start(ctx.currentTime + delay); osc.stop(ctx.currentTime + delay + 0.6);
+  });
+}
 
-// ── Pomodoro ────────────────────────────────────────────────────────
-var cfg={focus:load('pomo-focus',25),brk:load('pomo-break',5),count:load('pomo-count',4)};
-var state={phase:'focus',secsLeft:cfg.focus*60,completed:0,running:false,expanded:false};
-var ticker=null;
+// ── Pomodoro ─────────────────────────────────────────────────────────
+var cfg   = { focus: SharedUI.load('pomo-focus',25), brk: SharedUI.load('pomo-break',5), count: SharedUI.load('pomo-count',4) };
+var state = { phase: 'focus', secsLeft: cfg.focus * 60, completed: 0, running: false, expanded: true };
+var ticker = null;
 
-document.getElementById('sl-focus').value=cfg.focus; document.getElementById('lbl-focus').textContent=cfg.focus+' min';
-document.getElementById('sl-break').value=cfg.brk;   document.getElementById('lbl-break').textContent=cfg.brk+' min';
-document.getElementById('sl-count').value=cfg.count;  document.getElementById('lbl-count').textContent=cfg.count;
-document.getElementById('sl-focus').oninput=function(){cfg.focus=+this.value;document.getElementById('lbl-focus').textContent=this.value+' min';save('pomo-focus',cfg.focus);if(state.phase==='focus'&&!state.running){state.secsLeft=cfg.focus*60;renderAll();}};
-document.getElementById('sl-break').oninput=function(){cfg.brk=+this.value;document.getElementById('lbl-break').textContent=this.value+' min';save('pomo-break',cfg.brk);if(state.phase==='break'&&!state.running){state.secsLeft=cfg.brk*60;renderAll();}};
-document.getElementById('sl-count').oninput=function(){cfg.count=+this.value;document.getElementById('lbl-count').textContent=this.value;save('pomo-count',cfg.count);renderAll();};
+document.getElementById('sl-focus').value = cfg.focus; document.getElementById('lbl-focus').textContent = cfg.focus + ' min';
+document.getElementById('sl-break').value = cfg.brk;   document.getElementById('lbl-break').textContent = cfg.brk + ' min';
+document.getElementById('sl-count').value = cfg.count;  document.getElementById('lbl-count').textContent = cfg.count;
+document.getElementById('sl-focus').oninput = function () { cfg.focus = +this.value; document.getElementById('lbl-focus').textContent = this.value + ' min'; SharedUI.save('pomo-focus', cfg.focus); if (state.phase === 'focus' && !state.running) { state.secsLeft = cfg.focus * 60; renderAll(); } };
+document.getElementById('sl-break').oninput = function () { cfg.brk = +this.value; document.getElementById('lbl-break').textContent = this.value + ' min'; SharedUI.save('pomo-break', cfg.brk); if (state.phase === 'break' && !state.running) { state.secsLeft = cfg.brk * 60; renderAll(); } };
+document.getElementById('sl-count').oninput = function () { cfg.count = +this.value; document.getElementById('lbl-count').textContent = this.value; SharedUI.save('pomo-count', cfg.count); renderAll(); };
 
-function toggleView(){state.expanded=!state.expanded;applyView();}
-function applyView(){
-  var pill=document.getElementById('pill'),cpill=document.getElementById('clock-pill');
-  var wrap=document.getElementById('timer-ring-wrap'),ctrl=document.getElementById('controls');
-  if(state.expanded){
-    pill.classList.add('hidden');cpill.classList.remove('hidden');
-    wrap.classList.remove('hidden');ctrl.classList.remove('hidden');
-    document.getElementById('btn-toggle-view').textContent='Collapse';
+function toggleView() { state.expanded = !state.expanded; applyView(); }
+function applyView() {
+  var pill  = document.getElementById('pill');
+  var cpill = document.getElementById('clock-pill');
+  var wrap  = document.getElementById('timer-ring-wrap');
+  var ctrl  = document.getElementById('controls');
+  if (state.expanded) {
+    pill.classList.add('hidden');    cpill.classList.remove('hidden');
+    wrap.classList.remove('hidden'); ctrl.classList.remove('hidden');
+    document.getElementById('btn-toggle-view').textContent = 'Collapse';
   } else {
-    pill.classList.remove('hidden');cpill.classList.add('hidden');
-    wrap.classList.add('hidden');ctrl.classList.add('hidden');
-    document.getElementById('btn-toggle-view').textContent='Expand';
+    pill.classList.remove('hidden'); cpill.classList.add('hidden');
+    wrap.classList.add('hidden');
+    document.getElementById('btn-toggle-view').textContent = 'Expand';
     document.getElementById('pomo-settings').classList.remove('open');
   }
   renderAll();
 }
 
-function togglePlay(){if(!state.expanded){state.expanded=true;applyView();}state.running=!state.running;if(state.running){ticker=setInterval(tick,1000);}else{clearInterval(ticker);}renderAll();}
+function togglePlay() {
+  if (!state.expanded) { state.expanded = true; applyView(); }
+  state.running = !state.running;
+  if (state.running) { ticker = setInterval(tick, 1000); }
+  else { clearInterval(ticker); }
+  renderAll();
+}
 
-function tick(){state.secsLeft--;if(state.secsLeft<=0){if(state.phase==='focus'){state.completed=Math.min(state.completed+1,cfg.count);if(state.completed>=cfg.count){clearInterval(ticker);state.running=false;state.secsLeft=0;renderAll();return;}state.phase='break';state.secsLeft=cfg.brk*60;}else{state.phase='focus';state.secsLeft=cfg.focus*60;}}renderAll();}
+function tick() {
+  state.secsLeft--;
+  if (state.secsLeft <= 0) {
+    if (state.phase === 'focus') {
+      state.completed = Math.min(state.completed + 1, cfg.count);
+      playFocusDone();
+      if (state.completed >= cfg.count) {
+        clearInterval(ticker); state.running = false; state.secsLeft = 0; renderAll(); return;
+      }
+      state.phase = 'break'; state.secsLeft = cfg.brk * 60;
+    } else {
+      playBreakDone();
+      state.phase = 'focus'; state.secsLeft = cfg.focus * 60;
+    }
+  }
+  renderAll();
+}
 
-function resetTimer(){clearInterval(ticker);state.running=false;state.phase='focus';state.secsLeft=cfg.focus*60;state.completed=0;renderAll();}
+function resetTimer() {
+  clearInterval(ticker);
+  state.running = false; state.phase = 'focus';
+  state.secsLeft = cfg.focus * 60; state.completed = 0;
+  renderAll();
+}
 
-function renderAll(){
-  var timeStr=fmt(state.secsLeft),modeStr=state.phase==='focus'?'Focus':'Break';
-  var playTxt=state.running?'Pause':(state.secsLeft===cfg.focus*60?'Start':'Resume');
-  var allDone=state.completed>=cfg.count;
-  document.getElementById('pill-ptime').textContent=allDone?'done':timeStr;
-  renderDots('pill-dots','pdot');
-  document.getElementById('ring-mode').textContent=allDone?'✓ Complete':modeStr;
-  document.getElementById('ring-time').textContent=allDone?'—':timeStr;
-  document.getElementById('ring-sub').textContent=state.running?'running…':(allDone?'great work!':(state.secsLeft<cfg.focus*60?'paused':'click to configure'));
-  renderDots('ring-dots','ring-dot');
+function renderAll() {
+  var timeStr  = fmt(state.secsLeft);
+  var modeStr  = state.phase === 'focus' ? 'Focus' : 'Break';
+  var playTxt  = state.running ? 'Pause' : (state.secsLeft === cfg.focus * 60 ? 'Start' : 'Resume');
+  var allDone  = state.completed >= cfg.count;
+  document.getElementById('pill-ptime').textContent   = allDone ? 'done' : timeStr;
+  renderDots('pill-dots', 'pdot');
+  document.getElementById('ring-mode').textContent = allDone ? 'Complete' : modeStr;
+  document.getElementById('ring-time').textContent = allDone ? '-' : timeStr;
+  document.getElementById('ring-sub').textContent  = state.running ? 'running...' : (allDone ? 'great work!' : (state.secsLeft < cfg.focus * 60 ? 'paused' : 'click to configure'));
+  renderDots('ring-dots', 'ring-dot');
   drawRing();
-  var pb=document.getElementById('btn-play');
-  pb.textContent=playTxt;pb.classList.toggle('primary',!state.running);
+  var pb = document.getElementById('btn-play');
+  pb.textContent = playTxt;
+  pb.classList.toggle('primary', !state.running);
 }
 
-function renderDots(cid,cls){var el=document.getElementById(cid);el.innerHTML='';for(var i=0;i<cfg.count;i++){var d=document.createElement('div');d.className=cls+(i<state.completed?' done':'');el.appendChild(d);}}
-
-function drawRing(){
-  var cv=document.getElementById('ring-canvas'),ctx=cv.getContext('2d'),S=280;
-  cv.width=S;cv.height=S;var cx=S/2,cy=S/2,R=120,lw=6;
-  ctx.clearRect(0,0,S,S);
-  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=lw;ctx.stroke();
-  var total=state.phase==='focus'?cfg.focus*60:cfg.brk*60;
-  var progress=total>0?(total-state.secsLeft)/total:0;
-  var sa=-Math.PI/2,ea=sa+progress*Math.PI*2;
-  if(progress>0){var grad=ctx.createLinearGradient(cx-R,cy,cx+R,cy);if(state.phase==='focus'){grad.addColorStop(0,'rgba(212,114,79,0.9)');grad.addColorStop(1,'rgba(255,160,80,0.9)');}else{grad.addColorStop(0,'rgba(100,180,210,0.9)');grad.addColorStop(1,'rgba(140,220,200,0.9)');}ctx.beginPath();ctx.arc(cx,cy,R,sa,ea);ctx.strokeStyle=grad;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();}
-  if(progress>0&&progress<1){var tx=cx+R*Math.cos(ea),ty=cy+R*Math.sin(ea),gc=state.phase==='focus'?'212,114,79':'100,180,210';var grd=ctx.createRadialGradient(tx,ty,0,tx,ty,10);grd.addColorStop(0,'rgba('+gc+',0.6)');grd.addColorStop(1,'rgba('+gc+',0)');ctx.beginPath();ctx.arc(tx,ty,10,0,Math.PI*2);ctx.fillStyle=grd;ctx.fill();}
+function renderDots(cid, cls) {
+  var el = document.getElementById(cid); el.innerHTML = '';
+  for (var i = 0; i < cfg.count; i++) {
+    var d = document.createElement('div');
+    d.className = cls + (i < state.completed ? ' done' : '');
+    el.appendChild(d);
+  }
 }
+
+function drawRing() {
+  var cv = document.getElementById('ring-canvas'), ctx = cv.getContext('2d'), S = 280;
+  cv.width = S; cv.height = S;
+  var cx = S / 2, cy = S / 2, R = 120, lw = 6;
+  ctx.clearRect(0, 0, S, S);
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = lw; ctx.stroke();
+  var total    = state.phase === 'focus' ? cfg.focus * 60 : cfg.brk * 60;
+  var progress = total > 0 ? (total - state.secsLeft) / total : 0;
+  var sa = -Math.PI / 2, ea = sa + progress * Math.PI * 2;
+  if (progress > 0) {
+    var grad = ctx.createLinearGradient(cx - R, cy, cx + R, cy);
+    if (state.phase === 'focus') { grad.addColorStop(0,'rgba(212,114,79,0.9)'); grad.addColorStop(1,'rgba(255,160,80,0.9)'); }
+    else { grad.addColorStop(0,'rgba(100,180,210,0.9)'); grad.addColorStop(1,'rgba(140,220,200,0.9)'); }
+    ctx.beginPath(); ctx.arc(cx, cy, R, sa, ea);
+    ctx.strokeStyle = grad; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.stroke();
+  }
+  if (progress > 0 && progress < 1) {
+    var tx = cx + R * Math.cos(ea), ty = cy + R * Math.sin(ea);
+    var gc = state.phase === 'focus' ? '212,114,79' : '100,180,210';
+    var grd = ctx.createRadialGradient(tx, ty, 0, tx, ty, 10);
+    grd.addColorStop(0, 'rgba(' + gc + ',0.6)'); grd.addColorStop(1, 'rgba(' + gc + ',0)');
+    ctx.beginPath(); ctx.arc(tx, ty, 10, 0, Math.PI * 2);
+    ctx.fillStyle = grd; ctx.fill();
+  }
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────
+document.addEventListener('keydown', function (e) {
+  // Ignore when typing in an input field
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  if (e.code === 'KeyR')  { e.preventDefault(); resetTimer(); }
+});
 
 renderAll();
 applyView();

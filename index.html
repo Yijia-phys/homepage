@@ -43,13 +43,6 @@ html, body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro'
 .footer-row{ grid-column:1/-1; grid-row:2; }
 
 /* Glass — slightly more transparent */
-.glass {
-  background: var(--glass);
-  backdrop-filter: blur(var(--blur));
-  -webkit-backdrop-filter: blur(var(--blur));
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
 
 /* ── Location entry card ── */
 .loc-card {
@@ -112,50 +105,20 @@ html, body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro'
 
 /* ── Map ── */
 
-
 /* ── Footer ── */
 .footer-row { display:flex; align-items:center; justify-content:space-between; }
 .footer-text { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; color:rgba(255,255,255,.28); text-transform:uppercase; }
 .footer-text a { color:rgba(255,255,255,.35); text-decoration:none; border-bottom:1px solid rgba(255,255,255,.15); padding-bottom:1px; transition:color .15s; }
 .footer-text a:hover { color:var(--accent); }
-.settings-btn { width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,.07); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); transition:background .15s, color .15s; }
-.settings-btn:hover { background:rgba(255,255,255,.14); color:var(--text); }
-.settings-btn svg { width:14px; height:14px; }
 
 /* ── Settings ── */
 .settings-panel { position:fixed; bottom:4rem; right:2.5rem; z-index:100; width:310px; padding:1.1rem 1.2rem; display:none; flex-direction:column; gap:1rem; max-height:80vh; overflow-y:auto; }
 .settings-panel.open { display:flex; }
-.s-title { font-family:'JetBrains Mono',monospace; font-size:.63rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding-bottom:.45rem; }
-.wallpaper-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem; }
-.wp-thumb { aspect-ratio:16/9; border-radius:6px; border:2px solid transparent; cursor:pointer; overflow:hidden; transition:border-color .15s, transform .15s; background-size:cover; background-position:center; position:relative; }
-.wp-thumb:hover { transform:scale(1.05); }
-.wp-thumb.active { border-color:var(--accent); }
-.wp-thumb-del { position:absolute; top:2px; right:2px; width:14px; height:14px; background:rgba(0,0,0,.6); border-radius:50%; font-size:9px; display:none; align-items:center; justify-content:center; color:#fff; cursor:pointer; line-height:1; }
-.wp-thumb:hover .wp-thumb-del { display:flex; }
-.upload-btn { width:100%; padding:.45rem; border-radius:8px; background:rgba(255,255,255,.06); border:1px dashed var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.63rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:background .15s, border-color .15s, color .15s; text-align:center; }
-.upload-btn:hover { background:rgba(212,114,79,.12); border-color:var(--accent); color:var(--accent); }
-#file-input { display:none; }
-.slider-row { display:flex; flex-direction:column; gap:.35rem; }
-.slider-label { font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; }
-.slider-label span { color:var(--accent); }
-input[type=range] { width:100%; height:4px; border-radius:2px; appearance:none; background:rgba(255,255,255,.15); outline:none; cursor:pointer; }
-input[type=range]::-webkit-slider-thumb { appearance:none; width:13px; height:13px; border-radius:50%; background:var(--accent); cursor:pointer; }
-.tz-row { display:flex; flex-direction:column; gap:.45rem; }
-.tz-input { width:100%; padding:.42rem .65rem; border-radius:8px; background:rgba(255,255,255,.08); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:.68rem; outline:none; transition:border-color .15s; }
-.tz-input:focus { border-color:var(--accent); }
-.tz-btns { display:flex; gap:.45rem; }
-.tz-btn { flex:1; padding:.32rem .5rem; border-radius:6px; background:rgba(255,255,255,.07); border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; transition:background .15s, color .15s, border-color .15s; text-align:center; }
-.tz-btn:hover { background:rgba(212,114,79,.15); color:var(--accent); border-color:rgba(212,114,79,.35); }
-.tz-btn.primary { background:rgba(212,114,79,.2); color:var(--accent); border-color:rgba(212,114,79,.4); }
-.tz-btn.primary:hover { background:var(--accent); color:#fff; }
-.settings-close { align-self:flex-end; font-family:'JetBrains Mono',monospace; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); cursor:pointer; background:none; border:none; transition:color .15s; padding:0; }
-.settings-close:hover { color:var(--accent); }
 
-.wp-gradient-1 { background:linear-gradient(135deg,#1a0a2e 0%,#2d1b69 40%,#11998e 100%); }
-.wp-gradient-2 { background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%); }
-.wp-gradient-3 { background:linear-gradient(135deg,#141e30 0%,#243b55 100%); }
-.wp-gradient-4 { background:linear-gradient(135deg,#1a0533 0%,#6a003a 50%,#ff6e00 100%); }
-.wp-gradient-5 { background:linear-gradient(135deg,#0d1117 0%,#161b22 50%,#21262d 100%); }
+.tz-row { display:flex; flex-direction:column; gap:.45rem; }
+
+/* settings panel position */
+.settings-panel { bottom:4rem; right:2.5rem; width:310px; }
 </style>
 </head>
 <body>
@@ -249,111 +212,71 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:13px; height:13
 </div>
 
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-// ── Helpers ──────────────────────────────────────────────────────────
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-function load(k,def){try{var v=localStorage.getItem(k);return v==null?def:JSON.parse(v);}catch(e){return def;}}
-
-// ── Wallpapers ───────────────────────────────────────────────────────
-var PRESETS=[
-  {type:'gradient',cls:'wp-gradient-1',label:'Nebula'},
-  {type:'gradient',cls:'wp-gradient-2',label:'Ocean'},
-  {type:'gradient',cls:'wp-gradient-3',label:'Midnight'},
-  {type:'gradient',cls:'wp-gradient-4',label:'Ember'},
-  {type:'gradient',cls:'wp-gradient-5',label:'Void'},
-];
-var userWps=load('user-wps',[]);
-var currentWp=load('current-wp','preset-3');
-var bg=document.getElementById('bg');
-var bgNext=document.getElementById('bg-next');
-function allWps(){return PRESETS.map(function(p,i){return Object.assign({id:'preset-'+i},p);}).concat(userWps.map(function(u){return {id:u.id,type:'image',src:u.dataUrl};}));}
-function applyWpToEl(el,wp){el.className='';el.style.backgroundImage='';if(wp.type==='gradient'){el.classList.add(wp.cls);}else{el.style.backgroundImage='url('+wp.src+')';el.style.backgroundSize='cover';}}
-function switchWallpaper(id){
-  if(id===currentWp)return;
-  var wp=allWps().find(function(w){return w.id===id;});if(!wp)return;
-  applyWpToEl(bgNext,wp);bgNext.style.opacity='1';
-  setTimeout(function(){applyWpToEl(bg,wp);bgNext.style.opacity='0';currentWp=id;save('current-wp',id);refreshThumbs();},820);
-}
-function deleteUserWp(id,e){e.stopPropagation();userWps=userWps.filter(function(u){return u.id!==id;});save('user-wps',userWps);if(currentWp===id)switchWallpaper('preset-3');refreshThumbs();}
-function refreshThumbs(){
-  var grid=document.getElementById('wp-grid');grid.innerHTML='';
-  allWps().forEach(function(wp){
-    var t=document.createElement('div');t.className='wp-thumb'+(wp.id===currentWp?' active':'');
-    if(wp.type==='gradient'){t.classList.add(wp.cls);t.title=wp.label||'';}else{t.style.backgroundImage='url('+wp.src+')';}
-    t.onclick=function(){switchWallpaper(wp.id);};
-    if(wp.type==='image'){var del=document.createElement('div');del.className='wp-thumb-del';del.textContent='✕';del.onclick=function(e){deleteUserWp(wp.id,e);};t.appendChild(del);}
-    grid.appendChild(t);
-  });
-}
-document.getElementById('file-input').addEventListener('change',function(e){
-  var file=e.target.files[0];if(!file)return;
-  var reader=new FileReader();
-  reader.onload=function(ev){var id='user-'+Date.now();userWps.push({id:id,dataUrl:ev.target.result});if(userWps.length>8)userWps=userWps.slice(-8);save('user-wps',userWps);refreshThumbs();switchWallpaper(id);};
-  reader.readAsDataURL(file);e.target.value='';
-});
-(function(){var wp=allWps().find(function(w){return w.id===currentWp;})||allWps()[3];applyWpToEl(bg,wp);currentWp=wp.id;})();
-refreshThumbs();
-
-// ── Display sliders ──────────────────────────────────────────────────
-var dispCfg=load('display',{blur:8,bright:85,overlay:55,card:30});
-function applyDisplay(){
-  bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';
-  document.getElementById('overlay').style.opacity=dispCfg.overlay/100;
-  document.documentElement.style.setProperty('--glass','rgba(10,8,6,'+(dispCfg.card/100)+')');
-  document.getElementById('sl-blur').value=dispCfg.blur;
-  document.getElementById('sl-bright').value=dispCfg.bright;
-  document.getElementById('sl-overlay').value=dispCfg.overlay;
-  document.getElementById('sl-card').value=dispCfg.card;
-  document.getElementById('lbl-blur').textContent=dispCfg.blur+'px';
-  document.getElementById('lbl-bright').textContent=dispCfg.bright+'%';
-  document.getElementById('lbl-overlay').textContent=dispCfg.overlay+'%';
-  document.getElementById('lbl-card').textContent=dispCfg.card+'%';
-}
-applyDisplay();
-document.getElementById('sl-blur').oninput=function(){dispCfg.blur=+this.value;document.getElementById('lbl-blur').textContent=this.value+'px';bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';save('display',dispCfg);};
-document.getElementById('sl-bright').oninput=function(){dispCfg.bright=+this.value;document.getElementById('lbl-bright').textContent=this.value+'%';bg.style.filter=bgNext.style.filter='blur('+dispCfg.blur+'px) brightness('+(dispCfg.bright/100)+')';save('display',dispCfg);};
-document.getElementById('sl-overlay').oninput=function(){dispCfg.overlay=+this.value;document.getElementById('lbl-overlay').textContent=this.value+'%';document.getElementById('overlay').style.opacity=dispCfg.overlay/100;save('display',dispCfg);};
-document.getElementById('sl-card').oninput=function(){dispCfg.card=+this.value;document.getElementById('lbl-card').textContent=this.value+'%';document.documentElement.style.setProperty('--glass','rgba(10,8,6,'+(dispCfg.card/100)+')');save('display',dispCfg);};;
+<script src="shared.js"></script>
+<script>SharedUI.injectStyles();</script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script>
+// ── Boot ─────────────────────────────────────────────────────────────
+SharedUI.initWallpaper();
+SharedUI.initDisplay(['blur', 'bright', 'overlay', 'card']);
+SharedUI.initWaves();
+var toggleSettings = SharedUI.initSettings('settings', '.settings-btn');
 
 // ── Timezone ─────────────────────────────────────────────────────────
-var currentTz=load('timezone','');
-if(currentTz){document.getElementById('tz-input').value=currentTz;document.getElementById('clock-tz').textContent=currentTz;}
-function applyTz(){var val=document.getElementById('tz-input').value.trim();if(!val)return;try{new Intl.DateTimeFormat('en',{timeZone:val}).format(new Date());currentTz=val;save('timezone',val);document.getElementById('clock-tz').textContent=val;}catch(e){document.getElementById('tz-input').style.borderColor='#e05';setTimeout(function(){document.getElementById('tz-input').style.borderColor='';},1200);}}
-function resetTz(){currentTz='';save('timezone','');document.getElementById('tz-input').value='';document.getElementById('clock-tz').textContent='Local time';}
-document.getElementById('tz-input').addEventListener('keydown',function(e){if(e.key==='Enter')applyTz();});
-
-// ── Clock ─────────────────────────────────────────────────────────────
-var DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function updateClock(){
-  var now=new Date(),hh,mm,ss,dateStr,dayStr;
-  if(currentTz){try{var pts=new Intl.DateTimeFormat('en',{timeZone:currentTz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,weekday:'long',month:'short',day:'numeric',year:'numeric'}).formatToParts(now);var get=function(t){var p=pts.find(function(x){return x.type===t;});return p?p.value:'';};hh=get('hour');mm=get('minute');ss=get('second');dateStr=get('month')+' '+get('day')+', '+get('year');dayStr=get('weekday');}catch(e){currentTz='';save('timezone','');}}
-  if(!currentTz){hh=String(now.getHours()).padStart(2,'0');mm=String(now.getMinutes()).padStart(2,'0');ss=String(now.getSeconds()).padStart(2,'0');dateStr=MONTHS[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();dayStr=DAYS[now.getDay()];}
-  document.getElementById('clock-time').innerHTML=hh+'<span class="colon">:</span>'+mm+'<span class="colon">:</span>'+ss;
-  document.getElementById('clock-date').textContent=dateStr;document.getElementById('clock-day').textContent=dayStr;
+var currentTz = SharedUI.load('timezone', '');
+if (currentTz) {
+  document.getElementById('tz-input').value = currentTz;
+  document.getElementById('clock-tz').textContent = currentTz;
 }
-updateClock();setInterval(updateClock,1000);
-
-// ── Settings ──────────────────────────────────────────────────────────
-function toggleSettings(){document.getElementById('settings').classList.toggle('open');}
-document.addEventListener('click',function(e){var panel=document.getElementById('settings');if(!panel.contains(e.target)&&!e.target.closest('.settings-btn'))panel.classList.remove('open');});
-
-// ── Wave canvas ───────────────────────────────────────────────────────
-var wc=document.getElementById('wave-canvas'),wctx=wc.getContext('2d'),wW,wH;
-function wResize(){wW=wc.width=window.innerWidth;wH=wc.height=window.innerHeight;}
-wResize();window.addEventListener('resize',wResize);
-var WAVES=[{A:55,k:.010,omega:.55,phi:0.0,r:212,g:114,b:79},{A:32,k:.018,omega:.85,phi:1.8,r:100,g:160,b:200},{A:20,k:.030,omega:1.20,phi:3.5,r:180,g:140,b:210}];
-function drawWaves(t){
-  wctx.clearRect(0,0,wW,wH);var cy=wH*.72,halfW=wW*.5,envW=wW*.42;
-  for(var wi=0;wi<WAVES.length;wi++){var w=WAVES[wi];
-    wctx.beginPath();for(var x=0;x<=wW;x+=2){var dx=(x-halfW)/envW;var env=Math.exp(-(dx*dx));var y=cy+w.A*env*Math.sin(w.k*(x-halfW)+w.omega*t+w.phi);if(x===0){wctx.moveTo(x,y);}else{wctx.lineTo(x,y);}}
-    wctx.strokeStyle='rgba('+w.r+','+w.g+','+w.b+',0.45)';wctx.lineWidth=1.5;wctx.stroke();
-    wctx.beginPath();for(var x2=0;x2<=wW;x2+=2){var dx2=(x2-halfW)/envW;var env2=Math.exp(-(dx2*dx2));var y2=cy+w.A*env2*Math.sin(w.k*(x2-halfW)+w.omega*t+w.phi);if(x2===0){wctx.moveTo(x2,y2);}else{wctx.lineTo(x2,y2);}}
-    wctx.lineTo(wW,wH);wctx.lineTo(0,wH);wctx.closePath();var grad=wctx.createLinearGradient(0,cy-60,0,cy+100);grad.addColorStop(0,'rgba('+w.r+','+w.g+','+w.b+',0.04)');grad.addColorStop(1,'rgba('+w.r+','+w.g+','+w.b+',0.00)');wctx.fillStyle=grad;wctx.fill();
+function applyTz() {
+  var val = document.getElementById('tz-input').value.trim();
+  if (!val) return;
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: val }).format(new Date());
+    currentTz = val;
+    SharedUI.save('timezone', val);
+    document.getElementById('clock-tz').textContent = val;
+  } catch(e) {
+    var inp = document.getElementById('tz-input');
+    inp.style.borderColor = '#e05';
+    setTimeout(function () { inp.style.borderColor = ''; }, 1200);
   }
 }
-function loop(ts){drawWaves(ts*.001);requestAnimationFrame(loop);}
-requestAnimationFrame(loop);
+function resetTz() {
+  currentTz = '';
+  SharedUI.save('timezone', '');
+  document.getElementById('tz-input').value = '';
+  document.getElementById('clock-tz').textContent = 'Local time';
+}
+document.getElementById('tz-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') applyTz(); });
+
+// ── Clock ─────────────────────────────────────────────────────────────
+var DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function updateClock() {
+  var now = new Date(), hh, mm, ss, dateStr, dayStr;
+  if (currentTz) {
+    try {
+      var pts = new Intl.DateTimeFormat('en', { timeZone: currentTz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }).formatToParts(now);
+      var get = function (t) { var p = pts.find(function (x) { return x.type === t; }); return p ? p.value : ''; };
+      hh = get('hour'); mm = get('minute'); ss = get('second');
+      dateStr = get('month') + ' ' + get('day') + ', ' + get('year');
+      dayStr  = get('weekday');
+    } catch(e) { currentTz = ''; SharedUI.save('timezone', ''); }
+  }
+  if (!currentTz) {
+    hh = String(now.getHours()).padStart(2, '0');
+    mm = String(now.getMinutes()).padStart(2, '0');
+    ss = String(now.getSeconds()).padStart(2, '0');
+    dateStr = MONTHS[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+    dayStr  = DAYS[now.getDay()];
+  }
+  document.getElementById('clock-time').innerHTML = hh + '<span class="colon">:</span>' + mm + '<span class="colon">:</span>' + ss;
+  document.getElementById('clock-date').textContent = dateStr;
+  document.getElementById('clock-day').textContent  = dayStr;
+}
+updateClock();
+setInterval(updateClock, 1000);
 </script>
 </body>
 </html>
