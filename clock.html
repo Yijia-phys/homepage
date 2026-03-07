@@ -183,7 +183,7 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro',
   z-index:25; display:flex; gap:.65rem; align-items:center;
   opacity:var(--ui-opacity); transition:opacity .3s, bottom .3s;
 }
-#controls.lift-for-bar { bottom:5.8rem; }
+#controls.lift-for-bar { bottom:10.8rem; }
 body.immersive-mode #controls { bottom:calc(72px + 1.8rem); }
 .ctrl-btn {
   font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.07em; text-transform:uppercase;
@@ -222,7 +222,7 @@ body.immersive-mode #music-settings-panel {
 
 /* ── Music player bar (expanded + player mode) ── */
 #music-player-bar {
-  position:fixed; bottom:4.5rem; left:50%; transform:translateX(-50%);
+  position:fixed; bottom:5.4rem; left:50%; transform:translateX(-50%);
   width:min(520px, calc(100vw - 3.6rem));
   z-index:20; display:flex; align-items:center; gap:.9rem;
   padding:.65rem .9rem;
@@ -278,17 +278,18 @@ body.immersive-mode #music-settings-panel {
 
 /* ── Player card (collapsed + player mode) ── */
 #music-player-card {
-  position:fixed; top:4.5rem; bottom:5rem;
-  left:50%; transform:translateX(-50%);
-  width:min(400px, calc(100vw - 3.6rem));
+  position:fixed; top:50%; left:50%;
+  transform:translate(-50%, -54%);
+  width:min(360px, calc(100vw - 3.6rem));
+  height:min(300px, calc(100vh - 14rem));
   z-index:20; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:.8rem;
-  padding:1.4rem 1.4rem 1.2rem;
+  align-items:center; justify-content:center; gap:.5rem;
+  padding:.75rem 1.1rem .7rem;
 }
 #card-cover {
-  width:min(160px,40%); aspect-ratio:1; border-radius:12px; object-fit:cover;
+  width:min(100px,28%); aspect-ratio:1; border-radius:9px; object-fit:cover;
   background:rgba(255,255,255,.06); border:1px solid var(--border);
-  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  box-shadow:0 4px 18px rgba(0,0,0,.4);
 }
 #card-title { font-family:'Playfair Display',serif; font-size:1.1rem; text-align:center; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #card-artist { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); text-align:center; }
@@ -302,6 +303,40 @@ body.immersive-mode #music-settings-panel {
 .card-controls .mc-btn { width:32px; height:32px; }
 .card-controls .mc-btn svg { width:14px; height:14px; }
 
+
+/* ── Immersive: expand/collapse icon (top-left, right of music btn) ── */
+#imm-toggle-btn {
+  position:fixed; top:1.6rem; z-index:30;
+  left:calc(1.8rem + 36px + .6rem);
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,.07); border:1px solid var(--border);
+  display:none; align-items:center; justify-content:center;
+  cursor:pointer; color:var(--muted); transition:background .15s,color .15s;
+}
+body.immersive-mode #imm-toggle-btn { display:flex; }
+#imm-toggle-btn:hover { background:rgba(255,255,255,.14); color:var(--text); }
+#imm-toggle-btn svg { width:15px; height:15px; }
+
+/* ── Immersive: icon pomo controls (top-right, left of gear) ── */
+#imm-pomo-btns {
+  position:fixed; top:1.6rem; z-index:30;
+  right:calc(1.8rem + 36px + .6rem);
+  display:none; align-items:center; gap:.5rem;
+}
+body.immersive-mode #imm-pomo-btns { display:flex; }
+/* also hide normal controls in immersive */
+body.immersive-mode #controls { display:none !important; }
+.imm-pomo-btn {
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,.07); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color:var(--muted); transition:background .15s,color .15s,border-color .15s;
+}
+.imm-pomo-btn:hover { background:rgba(255,255,255,.14); color:var(--text); }
+.imm-pomo-btn.primary { background:rgba(212,114,79,.2); color:var(--accent); border-color:rgba(212,114,79,.35); }
+.imm-pomo-btn.primary:hover { background:var(--accent); color:#fff; }
+.imm-pomo-btn svg { width:15px; height:15px; }
+
 /* ── Immersive: disc background ── */
 #disc-bg {
   position:fixed; inset:0; z-index:5;
@@ -314,20 +349,17 @@ body.immersive-mode #music-settings-panel {
   width:clamp(240px,52vh,52vw); height:clamp(240px,52vh,52vw);
   filter:saturate(.75) brightness(.62);
   box-shadow:0 0 90px rgba(0,0,0,.7), 0 0 30px rgba(212,114,79,.15);
-  animation:disc-spin 12s linear infinite;
-  animation-play-state:paused;
   background:rgba(30,20,15,.7);
+  will-change:transform;
 }
 #disc-img-el.no-cover {
   background:conic-gradient(rgba(212,114,79,.25),rgba(100,80,60,.15),rgba(212,114,79,.25));
 }
-#disc-img-el.spinning { animation-play-state:running; }
 #disc-hole {
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
   width:13%; height:13%; border-radius:50%;
   background:rgba(8,6,4,.95); border:1.5px solid rgba(255,255,255,.12);
 }
-@keyframes disc-spin { to { transform:rotate(360deg); } }
 
 /* ── Immersive: lyrics center ── */
 #imm-lyrics {
@@ -408,12 +440,28 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 
 <!-- Top-left: back -->
 <a id="back-btn" href="index.html">&#8592; Back</a>
+<!-- Immersive pomo icon buttons (top-right, left of gear) -->
+<div id="imm-pomo-btns">
+  <div class="imm-pomo-btn primary" id="imm-btn-play" onclick="togglePlay()">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.804 8 5 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/></svg>
+  </div>
+  <div class="imm-pomo-btn" id="imm-btn-reset" onclick="resetTimer()">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41m-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9"/><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/></svg>
+  </div>
+</div>
 <!-- Top-right: expand/collapse -->
 <div id="btn-toggle-view" onclick="toggleView()">Expand</div>
 
 <!-- Bottom-right: gear -->
 <div id="settings-gear" onclick="toggleMainSettings()">
   <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.892 3.433-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.892-1.64-.901-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52z"/></svg>
+</div>
+
+<!-- Immersive: expand/collapse icon (top-left, right of music btn) -->
+<div id="imm-toggle-btn" onclick="toggleView()">
+  <svg id="imm-toggle-icon" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M1.5 1h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1m0 5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1m0 5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1M9 2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m.5 4.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1m0 5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1"/>
+  </svg>
 </div>
 
 <!-- Bottom-right: minimal play/pause -->
@@ -663,8 +711,31 @@ document.addEventListener('click',function(e){
 // ── Sound alerts ─────────────────────────────────────────────────────
 var _audioCtx=null;
 function _getAudioCtx(){if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();return _audioCtx;}
-function playFocusDone(){var ctx=_getAudioCtx();[0,0.38].forEach(function(d){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(440,ctx.currentTime+d);o.frequency.exponentialRampToValueAtTime(330,ctx.currentTime+d+0.35);g.gain.setValueAtTime(0,ctx.currentTime+d);g.gain.linearRampToValueAtTime(0.38,ctx.currentTime+d+0.03);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.7);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.75);});}
-function playBreakDone(){var ctx=_getAudioCtx();[0,0.22,0.44].forEach(function(d,i){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='triangle';o.frequency.setValueAtTime([660,784,988][i],ctx.currentTime+d);g.gain.setValueAtTime(0,ctx.currentTime+d);g.gain.linearRampToValueAtTime(0.28,ctx.currentTime+d+0.02);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.55);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.6);});}
+function _duckMusic(durationMs) {
+  if (musicAudio.paused) return;
+  var origVol = musicAudio.volume;
+  var steps = 10, stepMs = 80;
+  var i = 0;
+  var down = setInterval(function() {
+    i++; musicAudio.volume = Math.max(0, origVol - (origVol * 0.8) * (i / steps));
+    if (i >= steps) clearInterval(down);
+  }, stepMs);
+  setTimeout(function() {
+    var j = 0;
+    var up = setInterval(function() {
+      j++; musicAudio.volume = Math.min(origVol, origVol * 0.2 + (origVol * 0.8) * (j / steps));
+      if (j >= steps) clearInterval(up);
+    }, stepMs);
+  }, durationMs);
+}
+function playFocusDone() {
+  _duckMusic(1800);
+  var ctx=_getAudioCtx();[0,0.38].forEach(function(d){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(440,ctx.currentTime+d);o.frequency.exponentialRampToValueAtTime(330,ctx.currentTime+d+0.35);g.gain.setValueAtTime(0,ctx.currentTime+d);g.gain.linearRampToValueAtTime(0.38,ctx.currentTime+d+0.03);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.7);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.75);});
+}
+function playBreakDone() {
+  _duckMusic(1600);
+  var ctx=_getAudioCtx();[0,0.22,0.44].forEach(function(d,i){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='triangle';o.frequency.setValueAtTime([660,784,988][i],ctx.currentTime+d);g.gain.setValueAtTime(0,ctx.currentTime+d);g.gain.linearRampToValueAtTime(0.28,ctx.currentTime+d+0.02);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.55);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.6);});
+}
 
 // ── Pomodoro ─────────────────────────────────────────────────────────
 var cfg={focus:SharedUI.load('pomo-focus',25),brk:SharedUI.load('pomo-break',5),count:SharedUI.load('pomo-count',4)};
@@ -677,17 +748,16 @@ el('sl-focus').oninput=function(){cfg.focus=+this.value;el('lbl-focus').textCont
 el('sl-break').oninput=function(){cfg.brk=+this.value;el('lbl-break').textContent=this.value+' min';SharedUI.save('pomo-break',cfg.brk);if(state.phase==='break'&&!state.running){state.secsLeft=cfg.brk*60;renderAll();}};
 el('sl-count').oninput=function(){cfg.count=+this.value;el('lbl-count').textContent=this.value;SharedUI.save('pomo-count',cfg.count);renderAll();};
 
-function toggleView() {
-  if (music.mode==='immersive') return;
-  state.expanded=!state.expanded; applyView();
-}
+function toggleView() { state.expanded=!state.expanded; applyView(); }
 function applyView() {
   var immersive = music.mode==='immersive';
-  var expanded  = state.expanded && !immersive;
+  var expanded  = state.expanded;  // immersive no longer overrides expand state
   el('pill').classList.toggle('hidden', expanded);
   el('clock-pill').classList.toggle('hidden', !expanded);
   el('timer-ring-wrap').classList.toggle('hidden', !expanded);
-  el('btn-toggle-view').textContent = state.expanded ? 'Collapse' : 'Expand';
+  // controls always visible; immersive hides via CSS body.immersive-mode
+  el('controls').classList.remove('hidden');
+  el('btn-toggle-view').textContent = expanded ? 'Collapse' : 'Expand';
   if (!expanded) el('pomo-settings').classList.remove('open');
   applyMusicUI();
   renderAll();
@@ -720,6 +790,12 @@ function renderAll(){
   renderDots('ring-dots','ring-dot');
   drawRing();
   var pb=el('btn-play'); pb.textContent=playTxt; pb.classList.toggle('primary',!state.running);
+  // Immersive icon button
+  var ipb=el('imm-btn-play');
+  ipb.classList.toggle('primary',!state.running);
+  ipb.innerHTML = state.running
+    ? '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/></svg>'
+    : '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.804 8 5 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/></svg>';
 }
 function renderDots(cid,cls){var e=el(cid);e.innerHTML='';for(var i=0;i<cfg.count;i++){var d=document.createElement('div');d.className=cls+(i<state.completed?' done':'');e.appendChild(d);}}
 function drawRing(){
@@ -735,8 +811,20 @@ function drawRing(){
 // ── Keyboard shortcuts ────────────────────────────────────────────────
 document.addEventListener('keydown',function(e){
   if(e.target.tagName==='INPUT') return;
+  // Pomo
   if(e.code==='Space'){e.preventDefault();togglePlay();}
   if(e.code==='KeyR'){e.preventDefault();resetTimer();}
+  // Music  q=prev  w=play/pause  e=next  a=cycle mode
+  if(e.code==='KeyQ'){e.preventDefault();musicPrev();}
+  if(e.code==='KeyW'){e.preventDefault();musicTogglePlay();}
+  if(e.code==='KeyE'){e.preventDefault();musicNext();}
+  if(e.code==='KeyA'){e.preventDefault();
+    var modes=['off','minimal','player','immersive'];
+    setMusicMode(modes[(modes.indexOf(music.mode)+1)%4]);
+  }
+  if(e.code==='KeyS'){e.preventDefault();musicToggleLyrics();}
+  if(e.code==='KeyD'){e.preventDefault();musicTogglePlaylist();}
+  if(e.code==='KeyF'){e.preventDefault();musicCycleLoop();}
 });
 
 // ════════════════════════════════════════════════════════════════════════
@@ -877,9 +965,9 @@ function updateLoopBtns() {
 
 musicAudio.addEventListener('ended', function(){
   if(music.loop==='single'){ musicAudio.currentTime=0; musicAudio.play(); return; }
-  if(music.loop==='shuffle'){ loadTrack(Math.floor(Math.random()*music.playlist.length)); return; }
-  if(music.index < music.playlist.length-1){ loadTrack(music.index+1); }
-  else { musicAudio.currentTime=0; } // end of playlist
+  if(music.loop==='shuffle'){ loadTrack(Math.floor(Math.random()*music.playlist.length)); musicAudio.play(); return; }
+  if(music.index < music.playlist.length-1){ loadTrack(music.index+1); musicAudio.play(); }
+  // else: end of sequence, stay stopped
 });
 
 musicAudio.addEventListener('timeupdate', function(){
@@ -916,9 +1004,24 @@ function refreshPlayIcons(paused) {
   el('music-mini-btn').classList.toggle('playing', !paused);
 }
 
-function updateDiscSpin() {
-  el('disc-img-el').classList.toggle('spinning', !musicAudio.paused);
-}
+// ── JS-driven disc rotation (reliable across all browsers) ──────────
+var _discAngle = 0;
+var _discLastTs = null;
+// Single always-running rAF loop — polls state directly, no events needed
+(function _discFrame(ts) {
+  var shouldSpin = !musicAudio.paused && music.mode === 'immersive';
+  if (_discLastTs !== null && shouldSpin) {
+    _discAngle += (ts - _discLastTs) * (360 / 12000); // 12s/revolution
+  }
+  _discLastTs = ts;
+  if (music.mode === 'immersive') {
+    el('disc-img-el').style.transform = 'rotate(' + (_discAngle % 360).toFixed(2) + 'deg)';
+  }
+  requestAnimationFrame(_discFrame);
+}(performance.now()));
+// kept for call-site compatibility, now no-ops
+function updateDiscSpin() {}
+function initDiscRotation() {}
 
 // ── Lyrics ───────────────────────────────────────────────────────────
 function updateLyricLine() {
@@ -959,6 +1062,8 @@ function refreshMusicUI() {
 
   lrcLines = t.lrcText ? parseLrc(t.lrcText) : [];
   updateLyricLine();
+  // If already in immersive, make sure rAF loop is alive and spin state is current
+  if (music.mode === 'immersive') { initDiscRotation(); updateDiscSpin(); }
 }
 
 // ── Playlist panel ────────────────────────────────────────────────────
@@ -974,7 +1079,6 @@ function renderPlaylist() {
 }
 
 function musicTogglePlaylist() {
-  if(music.mode==='minimal'){el('music-playlist').classList.remove('open');return;}
   music.showPlaylist=!music.showPlaylist;
   el('music-playlist').classList.toggle('open',music.showPlaylist);
   el('toggle-playlist').classList.toggle('on',music.showPlaylist);
@@ -996,7 +1100,7 @@ function setMusicMode(mode) {
   music.mode=mode;
   SharedUI.save('music-mode',mode);
   if(mode==='immersive'&&state.expanded){ state.expanded=false; }
-  if(mode==='minimal') { music.showPlaylist=false; el('music-playlist').classList.remove('open'); }
+  // minimal mode no longer forces playlist closed
   document.querySelectorAll('.music-mode-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.mode===mode); });
   applyMusicUI();
 }
@@ -1007,16 +1111,28 @@ function applyMusicUI() {
   var minimal   = music.mode==='minimal';
   var player    = music.mode==='player';
   var immersive = music.mode==='immersive';
-  var expanded  = state.expanded && !immersive;
+  var expanded  = state.expanded;  // consistent with applyView
 
   // Immersive hides nav
   el('back-btn').classList.toggle('hidden', immersive);
   el('btn-toggle-view').classList.toggle('hidden', immersive);
+  // sync immersive toggle icon
+  var iti = el('imm-toggle-icon');
+  if (iti) iti.innerHTML = state.expanded
+    ? '<path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5m5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5M0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5m10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0z"/>'
+    : '<path d="M1.5 1h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1m0 5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1m0 5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1M9 2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m.5 4.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1m0 5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1"/>';
   document.body.classList.toggle('immersive-mode', immersive);
 
   // Disc background
   el('disc-bg').classList.toggle('hidden', !immersive);
-  updateDiscSpin();
+  if (immersive) {
+    // Robust disc init: force full refresh with small delay so element is painted
+    refreshMusicUI();
+    initDiscRotation();
+    setTimeout(updateDiscSpin, 30);
+  } else {
+    updateDiscSpin();
+  }
 
   // Immersive bottom bar
   el('imm-bar').classList.toggle('hidden', !immersive);
