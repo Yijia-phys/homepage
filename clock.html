@@ -875,6 +875,7 @@ document.addEventListener('keydown',function(e){
 // ════════════════════════════════════════════════════════════════════════
 // ── MUSIC PLAYER ────────────────────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════════════
+var _preImmersiveExpanded = true; // expanded state saved before entering immersive
 var music = {
   mode:         SharedUI.load('music-mode','off'),
   showLyrics:   SharedUI.load('music-lyrics',true),
@@ -1199,6 +1200,11 @@ function musicTogglePlaylist() {
   music.showPlaylist=!music.showPlaylist;
   el('music-playlist').classList.toggle('open',music.showPlaylist);
   el('toggle-playlist').classList.toggle('on',music.showPlaylist);
+  // close music settings panel when playlist opens
+  if(music.showPlaylist){
+    el('music-settings-panel').classList.remove('open');
+    el('music-settings-btn').classList.remove('active');
+  }
 }
 function musicToggleLyrics() {
   music.showLyrics=!music.showLyrics;
@@ -1211,12 +1217,20 @@ function musicToggleLyrics() {
 function toggleMusicSettings() {
   el('music-settings-panel').classList.toggle('open');
   el('music-settings-btn').classList.toggle('active', el('music-settings-panel').classList.contains('open'));
+  // close playlist when music settings opens
+  if(el('music-settings-panel').classList.contains('open')){
+    music.showPlaylist=false;
+    el('music-playlist').classList.remove('open');
+    el('toggle-playlist').classList.toggle('on',false);
+  }
 }
 
 function setMusicMode(mode) {
+  var wasImmersive = music.mode==='immersive';
   music.mode=mode;
   SharedUI.save('music-mode',mode);
-  if(mode==='immersive'&&state.expanded){ state.expanded=false; }
+  if(mode==='immersive'){ _preImmersiveExpanded = state.expanded; state.expanded=false; }
+  else if(wasImmersive){ state.expanded=_preImmersiveExpanded; }
   // minimal mode no longer forces playlist closed
   document.querySelectorAll('.music-mode-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.mode===mode); });
   applyMusicUI();
