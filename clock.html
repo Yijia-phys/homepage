@@ -567,6 +567,11 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
     <span>Playlist</span>
     <div class="toggle-switch" id="toggle-playlist" onclick="musicTogglePlaylist()"></div>
   </div>
+  <div class="s-title">Volume</div>
+  <div class="slider-row">
+    <div class="slider-label">Music <span id="lbl-music-vol">80%</span></div>
+    <input type="range" id="sl-music-vol" min="0" max="100" value="80">
+  </div>
   <button class="settings-close" onclick="toggleMusicSettings()">Close &#x2715;</button>
 </div>
 
@@ -882,6 +887,20 @@ var music = {
 
 var musicAudio = el('music-audio');
 var lrcLines   = [];   // [{time, text}]
+
+// ── Volume ───────────────────────────────────────────────────────────
+(function(){
+  var saved = parseFloat(SharedUI.load('music-vol', 0.8));
+  musicAudio.volume = saved;
+  el('sl-music-vol').value = Math.round(saved * 100);
+  el('lbl-music-vol').textContent = Math.round(saved * 100) + '%';
+})();
+el('sl-music-vol').oninput = function() {
+  var v = this.value / 100;
+  musicAudio.volume = v;
+  el('lbl-music-vol').textContent = this.value + '%';
+  SharedUI.save('music-vol', v);
+};
 var lrcTimer   = null;
 
 // SVG icons (inline, reused across play buttons)
