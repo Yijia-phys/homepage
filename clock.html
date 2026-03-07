@@ -261,12 +261,10 @@ body.immersive-mode #music-settings-panel {
 #music-lyrics-expanded {
   position:fixed; z-index:20;
   left:50%; transform:translateX(-50%);
-  top:calc(50% - 260px); /* above ring, clear of ring edge */
-  font-family:'Crimson Pro',serif; font-style:italic; font-size:1rem;
-  color:rgba(255,255,255,.65); letter-spacing:.02em; white-space:nowrap;
-  text-align:center; pointer-events:none; max-width:calc(100vw - 4rem);
-  overflow:hidden; text-overflow:ellipsis;
-  text-shadow:0 1px 8px rgba(0,0,0,.6);
+  top:calc(50% - 285px);
+  pointer-events:none; text-align:center;
+  width:min(560px, calc(100vw - 4rem));
+  display:flex; flex-direction:column; align-items:center; gap:.18rem;
 }
 
 /* ── Player card (collapsed + player mode) ── */
@@ -287,15 +285,59 @@ body.immersive-mode #music-settings-panel {
 #card-title { font-family:'Playfair Display',serif; font-size:1.1rem; text-align:center; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #card-artist { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); text-align:center; }
 #card-lyrics {
-  font-family:'Crimson Pro',serif; font-style:italic; font-size:.9rem;
-  color:rgba(255,255,255,.55); text-align:center; max-width:100%;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:1.3em;
+  display:flex; flex-direction:column; align-items:center; gap:.15rem;
+  width:100%; min-height:3.6em;
 }
 #card-progress-wrap { width:100%; margin-top:.2rem; }
 .card-controls { display:flex; align-items:center; gap:.55rem; }
 .card-controls .mc-btn { width:32px; height:32px; }
 .card-controls .mc-btn svg { width:14px; height:14px; }
 
+
+
+/* ── Shared lyrics line styles ── */
+.ly-line {
+  font-family:'Crimson Pro',serif; font-style:italic; letter-spacing:.02em;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+  transition:opacity .35s ease, transform .35s ease, font-size .35s ease, color .35s ease;
+  display:block; line-height:1.5;
+}
+.ly-prev, .ly-next {
+  font-size:.82rem; color:rgba(255,255,255,.28);
+  transform:scale(0.95);
+  text-shadow:none;
+}
+.ly-curr {
+  font-size:1rem; color:rgba(255,255,255,.92);
+  text-shadow:0 1px 10px rgba(0,0,0,.5);
+}
+.ly-curr.is-gap {
+  font-size:.78rem; color:rgba(255,255,255,.3); font-style:normal;
+  letter-spacing:.12em; text-transform:uppercase;
+}
+/* Immersive: bigger */
+#imm-lyrics .ly-prev, #imm-lyrics .ly-next {
+  font-size:.95rem; color:rgba(255,255,255,.25);
+}
+#imm-lyrics .ly-curr {
+  font-size:1.25rem; color:rgba(255,255,255,.9);
+  text-shadow:0 2px 14px rgba(0,0,0,.65);
+}
+#imm-lyrics .ly-curr.is-gap {
+  font-size:.88rem;
+}
+/* Lyric change animation */
+@keyframes ly-in-up   { from { opacity:0; transform:translateY(5px);  } to { opacity:1; transform:translateY(0); } }
+@keyframes ly-in-down { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+.ly-curr.anim-up   { animation: ly-in-up   0.12s ease forwards; }
+.ly-curr.anim-down { animation: ly-in-down 0.12s ease forwards; }
+
+/* No-lyrics placeholder */
+.ly-no-lyrics {
+  font-family:'JetBrains Mono',monospace; font-style:normal;
+  font-size:.62rem; letter-spacing:.1em; text-transform:uppercase;
+  color:rgba(255,255,255,.2); padding:.4rem 0;
+}
 
 /* ── Immersive: expand/collapse icon (top-left, right of music btn) ── */
 #imm-toggle-btn {
@@ -356,14 +398,11 @@ body.immersive-mode #controls { display:none !important; }
 
 /* ── Immersive: lyrics center ── */
 #imm-lyrics {
-  position:fixed; z-index:20; bottom:calc(72px + 3.5rem);
+  position:fixed; z-index:20; bottom:calc(72px + 3.2rem);
   left:50%; transform:translateX(-50%);
   text-align:center; pointer-events:none;
-  font-family:'Crimson Pro',serif; font-style:italic;
-  font-size:1.15rem; color:rgba(255,255,255,.8);
-  text-shadow:0 2px 12px rgba(0,0,0,.7);
-  max-width:calc(100vw - 6rem);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  width:min(640px, calc(100vw - 6rem));
+  display:flex; flex-direction:column; align-items:center; gap:.28rem;
 }
 
 /* ── Immersive: Spotify-style bottom bar ── */
@@ -929,12 +968,36 @@ function loadTrack(idx) {
 }
 
 function parseLrc(txt) {
-  var lines = [];
+  var GAP = 4.0; // seconds — gaps longer than this become (间奏)
+  var raw = [];
   txt.split('\n').forEach(function(line){
     var m = line.match(/\[(\d+):(\d+\.?\d*)\](.*)/);
-    if (m) lines.push({ time: parseInt(m[1])*60 + parseFloat(m[2]), text: m[3].trim() });
+    if (m) {
+      var text = m[3].trim();
+      raw.push({ time: parseInt(m[1])*60 + parseFloat(m[2]), text: text });
+    }
   });
-  return lines.sort(function(a,b){return a.time-b.time;});
+  raw.sort(function(a,b){return a.time-b.time;});
+
+  var lines = [];
+  for (var i = 0; i < raw.length; i++) {
+    var entry = raw[i];
+    // empty line → 间奏
+    if (!entry.text) entry = { time: entry.time, text: '· Music ·', isGap: true };
+    // gap before first lyric
+    if (i === 0 && entry.time > 3) {
+      lines.push({ time: 0, text: '· Music ·', isGap: true });
+    }
+    // gap between previous and this line
+    if (i > 0) {
+      var prev = raw[i-1];
+      if (entry.time - prev.time > GAP) {
+        lines.push({ time: prev.time + 0.8, text: '· Music ·', isGap: true });
+      }
+    }
+    lines.push(entry);
+  }
+  return lines;
 }
 
 // ── Playback controls ─────────────────────────────────────────────────
@@ -1035,18 +1098,41 @@ function updateDiscSpin() {}
 function initDiscRotation() {}
 
 // ── Lyrics ───────────────────────────────────────────────────────────
-function updateLyricLine() {
-  var t = musicAudio.currentTime, txt = '';
+var _lyricIdx = -1;
+function _lyricHtml(idx, animCls) {
   if (!lrcLines.length) {
-    txt = 'No lyrics · pure music';
-  } else {
-    var idx=0;
-    for(var i=0;i<lrcLines.length;i++){if(lrcLines[i].time<=t)idx=i;else break;}
-    txt = lrcLines[idx].text || '';
+    return '<span class="ly-line ly-no-lyrics">No lyrics · pure music</span>';
   }
-  el('music-lyrics-expanded').textContent = txt;
-  el('card-lyrics').textContent           = txt;
-  el('imm-lyrics').textContent            = txt;
+  var prev = idx > 0 ? lrcLines[idx-1] : null;
+  var curr = lrcLines[idx];
+  var next = idx < lrcLines.length-1 ? lrcLines[idx+1] : null;
+  var gapCls = curr && curr.isGap ? ' is-gap' : '';
+  var esc = function(s){ return s ? s.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; };
+  return (prev ? '<span class="ly-line ly-prev">' + esc(prev.text) + '</span>' : '<span class="ly-line ly-prev"></span>')
+       + '<span class="ly-line ly-curr' + gapCls + (animCls ? ' ' + animCls : '') + '">' + esc(curr ? curr.text : '') + '</span>'
+       + (next ? '<span class="ly-line ly-next">' + esc(next.text) + '</span>' : '<span class="ly-line ly-next"></span>');
+}
+function updateLyricLine() {
+  var t = musicAudio.currentTime;
+  if (!lrcLines.length) {
+    var ph = '<span class="ly-line ly-no-lyrics">No lyrics · pure music</span>';
+    el('music-lyrics-expanded').innerHTML = ph;
+    el('card-lyrics').innerHTML           = ph;
+    el('imm-lyrics').innerHTML            = ph;
+    return;
+  }
+  var idx = 0;
+  for (var i = 0; i < lrcLines.length; i++) {
+    if (lrcLines[i].time <= t) idx = i; else break;
+  }
+  if (idx === _lyricIdx) return;
+  var animCls = idx > _lyricIdx ? 'anim-up' : 'anim-down';
+  if (_lyricIdx === -1) animCls = ''; // first load, no animation
+  _lyricIdx = idx;
+  var html = _lyricHtml(idx, animCls);
+  el('music-lyrics-expanded').innerHTML = html;
+  el('card-lyrics').innerHTML           = html;
+  el('imm-lyrics').innerHTML            = html;
 }
 
 // ── Cover & track info refresh ────────────────────────────────────────
@@ -1072,6 +1158,7 @@ function refreshMusicUI() {
   else     { el('disc-img-el').src='';    el('disc-img-el').classList.add('no-cover'); }
 
   lrcLines = t.lrcText ? parseLrc(t.lrcText) : [];
+  _lyricIdx = -1;
   updateLyricLine();
   // If already in immersive, make sure rAF loop is alive and spin state is current
   if (music.mode === 'immersive') { initDiscRotation(); updateDiscSpin(); }
