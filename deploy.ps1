@@ -1,5 +1,3 @@
-quarto render
-
 $msg = Read-Host "Please enter a commit message (press Enter to use the default message)"
 
 if ([string]::IsNullOrWhiteSpace($msg)) {
