@@ -467,6 +467,12 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 }
 .playlist-item-name { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .playlist-item.active .playlist-item-idx { color:var(--accent); }
+.playlist-item-dur {
+  font-family:'JetBrains Mono',monospace; font-size:.58rem;
+  color:var(--muted); flex-shrink:0; padding-left:.4rem;
+  opacity:.7;
+}
+.playlist-item.active .playlist-item-dur { color:var(--accent); opacity:.8; }
 </style>
 </head>
 <body>
@@ -809,7 +815,7 @@ function applyView() {
 }
 
 function togglePlay() {
-  if (!state.expanded && music.mode!=='immersive') { state.expanded=true; applyView(); }
+  if (!state.expanded) { state.expanded=true; applyView(); }
   state.running=!state.running;
   if(state.running){ticker=setInterval(tick,1000);}else{clearInterval(ticker);}
   renderAll();
@@ -944,7 +950,7 @@ async function scanMusicFolder() {
     var file  = await entry.handle.getFile();
     var url   = URL.createObjectURL(file);
     var stem  = entry.name.replace(/\.[^.]+$/,'').toLowerCase();
-    var track = { name:entry.name, url:url, title:entry.name.replace(/\.[^.]+$/,''), artist:'', cover:'', lrcText:'' };
+    var track = { name:entry.name, url:url, title:entry.name.replace(/\.[^.]+$/,''), artist:'', cover:'', lrcText:'', duration:0 };
 
     // Read LRC
     if (lrcMap[stem]) {
@@ -967,6 +973,15 @@ async function scanMusicFolder() {
     })(track, file);
 
     music.playlist.push(track);
+    // Read duration asynchronously
+    (function(t){
+      var a = new Audio(); a.preload='metadata';
+      a.addEventListener('loadedmetadata', function(){
+        t.duration = a.duration;
+        renderPlaylist(); // refresh row when duration arrives
+      }, {once:true});
+      a.src = t.url;
+    })(track);
   }
 
   music.index = 0;
@@ -1190,7 +1205,14 @@ function renderPlaylist() {
   music.playlist.forEach(function(t,i){
     var item=document.createElement('div');
     item.className='playlist-item'+(i===music.index?' active':'');
-    item.innerHTML='<span class="playlist-item-idx">'+(i+1)+'</span><span class="playlist-item-name">'+(t.title||t.name)+'</span>';
+    var dur = '';
+    if (t.duration > 0) {
+      var dm = Math.floor(t.duration/60), ds = Math.floor(t.duration%60);
+      dur = dm+':'+(ds<10?'0':'')+ds;
+    }
+    item.innerHTML='<span class="playlist-item-idx">'+(i+1)+'</span>'
+      +'<span class="playlist-item-name">'+(t.title||t.name)+'</span>'
+      +(dur?'<span class="playlist-item-dur">'+dur+'</span>':'');
     item.onclick=function(){loadTrack(i); if(!musicAudio.paused||true) musicAudio.play();};
     container.appendChild(item);
   });
