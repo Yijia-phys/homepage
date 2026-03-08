@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a0a2e"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d4724f"/>
+      <stop offset="100%" stop-color="#b85a3a"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <!-- Subtle inner border (glass effect) -->
+  <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="6.4"
+        fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <!-- Y letterform — two arms down to a stem -->
+  <polyline points="8,7 16,18 24,7"
+            fill="none" stroke="url(#stroke)" stroke-width="2.8"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="16" y1="18" x2="16" y2="26"
+        stroke="url(#stroke)" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Accent dot -->
+  <circle cx="16" cy="26" r="1.4" fill="#d4724f" opacity="0.7"/>
+</svg>
