@@ -272,54 +272,13 @@
    * Call before any other SharedUI init so the styles exist when elements render.
    */
   function injectStyles() {
-    var style = document.createElement('style');
-    style.textContent = [
-      /* Glass card */
-      '.glass{background:var(--glass);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--border);border-radius:var(--radius);}',
-      /* Settings panel — structural only; each page adds position/size override */
-      '.settings-panel{position:fixed;z-index:100;padding:1.1rem 1.2rem;display:none;flex-direction:column;gap:1rem;max-height:80vh;overflow-y:auto;}',
-      '.settings-panel.open{display:flex;}',
-      /* Section titles */
-      '.s-title,.ps-title{font-family:"JetBrains Mono",monospace;font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:.45rem;}',
-      /* Wallpaper grid */
-      '.wallpaper-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;}',
-      '.wp-thumb{aspect-ratio:16/9;border-radius:6px;border:2px solid transparent;cursor:pointer;overflow:hidden;transition:border-color .15s,transform .15s;background-size:cover;background-position:center;position:relative;}',
-      '.wp-thumb:hover{transform:scale(1.05);}',
-      '.wp-thumb.active{border-color:var(--accent);}',
-      '.wp-thumb-del{position:absolute;top:2px;right:2px;width:14px;height:14px;background:rgba(0,0,0,.6);border-radius:50%;font-size:9px;display:none;align-items:center;justify-content:center;color:#fff;cursor:pointer;line-height:1;}',
-      '.wp-thumb:hover .wp-thumb-del{display:flex;}',
-      /* Upload button */
-      '.upload-btn{width:100%;padding:.45rem;border-radius:8px;background:rgba(255,255,255,.06);border:1px dashed var(--border);color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:.63rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background .15s,border-color .15s,color .15s;text-align:center;}',
-      '.upload-btn:hover{background:rgba(212,114,79,.12);border-color:var(--accent);color:var(--accent);}',
-      '#file-input{display:none;}',
-      /* Sliders */
-      '.slider-row,.ps-row{display:flex;flex-direction:column;gap:.35rem;}',
-      '.slider-label,.ps-label{font-family:"JetBrains Mono",monospace;font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;}',
-      '.slider-label span,.ps-label span{color:var(--accent);}',
-      'input[type=range]{width:100%;height:4px;border-radius:2px;appearance:none;background:rgba(255,255,255,.15);outline:none;cursor:pointer;}',
-      'input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;}',
-      /* Close / gear buttons */
-      '.settings-close,.ps-close{align-self:flex-end;font-family:"JetBrains Mono",monospace;font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;background:none;border:none;transition:color .15s;padding:0;}',
-      '.settings-close:hover,.ps-close:hover{color:var(--accent);}',
-      '.settings-btn{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:background .15s,color .15s;}',
-      '.settings-btn:hover{background:rgba(255,255,255,.14);color:var(--text);}',
-      '.settings-btn svg{width:14px;height:14px;}',
-      /* Timezone inputs (shared by index + clock) */
-      '.tz-input{width:100%;padding:.42rem .65rem;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid var(--border);color:var(--text);font-family:"JetBrains Mono",monospace;font-size:.68rem;outline:none;transition:border-color .15s;}',
-      '.tz-input:focus{border-color:var(--accent);}',
-      '.tz-btns{display:flex;gap:.45rem;}',
-      '.tz-btn{flex:1;padding:.32rem .5rem;border-radius:6px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:.6rem;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:background .15s,color .15s,border-color .15s;text-align:center;}',
-      '.tz-btn:hover{background:rgba(212,114,79,.15);color:var(--accent);border-color:rgba(212,114,79,.35);}',
-      '.tz-btn.primary,.tz-btn.tp{background:rgba(212,114,79,.2);color:var(--accent);border-color:rgba(212,114,79,.4);}',
-      '.tz-btn.primary:hover,.tz-btn.tp:hover{background:var(--accent);color:#fff;}',
-      /* Wallpaper gradient presets */
-      '.wp-gradient-1{background:linear-gradient(135deg,#1a0a2e 0%,#2d1b69 40%,#11998e 100%);}',
-      '.wp-gradient-2{background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%);}',
-      '.wp-gradient-3{background:linear-gradient(135deg,#141e30 0%,#243b55 100%);}',
-      '.wp-gradient-4{background:linear-gradient(135deg,#1a0533 0%,#6a003a 50%,#ff6e00 100%);}',
-      '.wp-gradient-5{background:linear-gradient(135deg,#0d1117 0%,#161b22 50%,#21262d 100%);}',
-    ].join('\n');
-    document.head.appendChild(style);
+    // Inject shared.css via <link> for proper DevTools source mapping
+    if (document.querySelector('link[data-shared-css]')) return;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'shared.css';
+    link.setAttribute('data-shared-css', '1');
+    document.head.appendChild(link);
   }
 
   // ── Public API ─────────────────────────────────────────────────────

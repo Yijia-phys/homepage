@@ -22,7 +22,7 @@
 **Shared**
 - Glassmorphism UI — frosted glass cards with adjustable blur, brightness, overlay opacity, and UI opacity
 - Wallpaper system — 5 built-in gradient presets + custom image upload (max 8), persisted via `localStorage`
-- Animated wave canvas background, shared across all pages via `shared.js`
+- Animated wave canvas background, shared across all pages via `shared.js` / `shared.css`
 - Live clock with IANA timezone support
 
 **map.html**
@@ -55,6 +55,7 @@ Supported formats: `mp3` `flac` `ogg` `wav` `aac` `m4a`
 - Loop modes: sequence → single → shuffle
 - Volume control persisted to `localStorage`
 - Music auto-ducks to 20% on pomodoro alert, then fades back
+- Track duration shown in playlist
 - Keyboard: `Q` prev · `W` play/pause · `E` next · `A` cycle mode · `S` toggle lyrics · `D` toggle playlist · `F` cycle loop
 
 ### Stack
@@ -68,6 +69,8 @@ No build tools. No frameworks. Plain HTML + CSS + vanilla JS.
 | [jsmediatags](https://github.com/nicktindall/jsmediatags) | 3.9.5 | Audio tag reading |
 | [Google Fonts](https://fonts.google.com) | — | Playfair Display, Crimson Pro, JetBrains Mono |
 
+Everything else — TopoJSON decoding, canvas rendering, wallpaper switching, wave animation, pomodoro engine, music player, LRC parser — is written from scratch in vanilla JS.
+
 ### File Structure
 
 ```
@@ -75,7 +78,8 @@ No build tools. No frameworks. Plain HTML + CSS + vanilla JS.
 ├── index.html
 ├── clock.html
 ├── map.html
-├── shared.js          # Shared UI module
+├── shared.js          # Shared UI module (logic)
+├── shared.css         # Shared UI styles
 └── assets/
     └── photos/        # City photos for map.html
 ```
@@ -83,11 +87,11 @@ No build tools. No frameworks. Plain HTML + CSS + vanilla JS.
 `shared.js` public API:
 
 ```js
-SharedUI.injectStyles()
-SharedUI.initWallpaper()
-SharedUI.initDisplay(['blur', 'bright', 'overlay', 'ui'])
-SharedUI.initWaves()
-SharedUI.initSettings(panelId, gearSelector)  // returns toggle fn
+SharedUI.injectStyles()                        // inject shared.css into <head>
+SharedUI.initWallpaper()                       // wallpaper grid + upload
+SharedUI.initDisplay(['blur','bright', ...])   // display sliders
+SharedUI.initWaves()                           // canvas wave animation
+SharedUI.initSettings(panelId, gearSelector)  // returns toggle function
 SharedUI.save(key, value)
 SharedUI.load(key, default)
 ```
@@ -141,7 +145,7 @@ MIT — do whatever you want with it.
 **通用**
 - 玻璃拟态 UI — 毛玻璃卡片，支持调节模糊、亮度、遮罩透明度、界面透明度
 - 壁纸系统 — 5 种内置渐变预设 + 自定义图片上传（最多 8 张），通过 `localStorage` 持久化
-- 全页面共享的 canvas 波浪动画背景（`shared.js`）
+- 全页面共享的 canvas 波浪动画背景（`shared.js` / `shared.css`）
 - 支持 IANA 时区的实时时钟
 
 **map.html**
@@ -174,6 +178,7 @@ MIT — do whatever you want with it.
 - 循环模式：顺序 → 单曲循环 → 随机
 - 音量控制并持久化保存
 - 番茄钟提示音触发时自动将音乐音量降至 20%，提示音结束后淡回
+- 播放列表显示每首曲目时长
 - 键盘快捷键：`Q` 上一曲 · `W` 播放/暂停 · `E` 下一曲 · `A` 切换模式 · `S` 切换歌词 · `D` 切换播放列表 · `F` 切换循环模式
 
 ### 技术栈
@@ -188,6 +193,47 @@ MIT — do whatever you want with it.
 | [Google Fonts](https://fonts.google.com) | — | Playfair Display、Crimson Pro、JetBrains Mono |
 
 其余所有内容——TopoJSON 解码、canvas 渲染、壁纸切换、波浪动画、番茄钟引擎、音乐播放器、LRC 解析器——均从零用原生 JS 实现。
+
+### 文件结构
+
+```
+/
+├── index.html
+├── clock.html
+├── map.html
+├── shared.js          # 共享 UI 模块（逻辑）
+├── shared.css         # 共享 UI 样式
+└── assets/
+    └── photos/        # map.html 使用的城市照片
+```
+
+`shared.js` 公共 API：
+
+```js
+SharedUI.injectStyles()                        // 将 shared.css 注入 <head>
+SharedUI.initWallpaper()                       // 壁纸网格 + 上传
+SharedUI.initDisplay(['blur','bright', ...])   // 显示调节滑块
+SharedUI.initWaves()                           // canvas 波浪动画
+SharedUI.initSettings(panelId, gearSelector)  // 返回设置面板切换函数
+SharedUI.save(key, value)
+SharedUI.load(key, default)
+```
+
+### localStorage 键
+
+| 键 | 类型 | 描述 |
+|---|---|---|
+| `current-wp` | string | 当前壁纸 ID |
+| `user-wps` | JSON | 用户上传的壁纸图片（base64，最多 8 张） |
+| `display` | JSON | 模糊、亮度、遮罩、界面透明度 |
+| `timezone` | string | IANA 时区（如 `Asia/Shanghai`） |
+| `pomo-focus` | number | 专注时长（分钟） |
+| `pomo-break` | number | 休息时长（分钟） |
+| `pomo-count` | number | 番茄钟组数 |
+| `music-mode` | string | `off` / `minimal` / `player` / `immersive` |
+| `music-vol` | number | 音量（0–1） |
+| `music-loop` | string | `sequence` / `single` / `shuffle` |
+| `music-lyrics` | bool | 歌词显示开关 |
 
 ### 浏览器兼容性
 
