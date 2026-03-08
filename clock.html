@@ -257,6 +257,20 @@ body.immersive-mode #music-settings-panel {
 .mc-btn.mc-active { color:var(--accent); border-color:rgba(212,114,79,.3); }
 .mc-loop-label { display:none; } /* replaced by icon buttons */
 
+/* ── EQ preset grid ── */
+.eq-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:.35rem;
+}
+.eq-btn {
+  font-family:'JetBrains Mono',monospace; font-size:.58rem;
+  letter-spacing:.05em; text-transform:uppercase;
+  padding:.38rem .3rem; border-radius:7px; text-align:center;
+  background:rgba(255,255,255,.06); border:1px solid var(--border);
+  color:var(--muted); cursor:pointer; transition:background .15s,color .15s,border-color .15s;
+}
+.eq-btn:hover { background:rgba(255,255,255,.12); color:var(--text); }
+.eq-btn.active { background:rgba(212,114,79,.18); color:var(--accent); border-color:rgba(212,114,79,.4); }
+
 /* ── Lyrics line (expanded+player: above ring; collapsed+player: in card) ── */
 #music-lyrics-expanded {
   position:fixed; z-index:20;
@@ -573,6 +587,15 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
     <span>Playlist</span>
     <div class="toggle-switch" id="toggle-playlist" onclick="musicTogglePlaylist()"></div>
   </div>
+  <div class="s-title">EQ</div>
+  <div class="eq-grid">
+    <div class="eq-btn" data-eq="flat"      onclick="setEQ('flat')">Flat</div>
+    <div class="eq-btn" data-eq="bass"      onclick="setEQ('bass')">Bass</div>
+    <div class="eq-btn" data-eq="treble"    onclick="setEQ('treble')">Treble</div>
+    <div class="eq-btn" data-eq="vocal"     onclick="setEQ('vocal')">Vocal</div>
+    <div class="eq-btn" data-eq="warm"      onclick="setEQ('warm')">Warm</div>
+    <div class="eq-btn" data-eq="classical" onclick="setEQ('classical')">Classical</div>
+  </div>
   <div class="s-title">Volume</div>
   <div class="slider-row">
     <div class="slider-label">Music <span id="lbl-music-vol">80%</span></div>
@@ -764,21 +787,85 @@ var _audioCtx=null;
 function _getAudioCtx(){if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();return _audioCtx;}
 function _duckMusic(durationMs) {
   if (musicAudio.paused) return;
+  // Duck via musicAudio.volume (works whether EQ chain is active or not)
   var origVol = musicAudio.volume;
-  var steps = 10, stepMs = 80;
-  var i = 0;
+  var steps = 10, stepMs = 80, i = 0;
   var down = setInterval(function() {
-    i++; musicAudio.volume = Math.max(0, origVol - (origVol * 0.8) * (i / steps));
+    i++; musicAudio.volume = Math.max(0, origVol - origVol * 0.8 * (i / steps));
     if (i >= steps) clearInterval(down);
   }, stepMs);
   setTimeout(function() {
     var j = 0;
     var up = setInterval(function() {
-      j++; musicAudio.volume = Math.min(origVol, origVol * 0.2 + (origVol * 0.8) * (j / steps));
+      j++; musicAudio.volume = Math.min(origVol, origVol * 0.2 + origVol * 0.8 * (j / steps));
       if (j >= steps) clearInterval(up);
     }, stepMs);
   }, durationMs);
 }
+
+
+
+// ── EQ — 5-band Web Audio processing chain ───────────────────────────
+// Bands: 60 Hz · 250 Hz · 1 kHz · 4 kHz · 12 kHz  (all peaking filters)
+// Presets: [sub, low-mid, mid, presence, air]  dB values
+var EQ_PRESETS = {
+  flat:      [  0,   0,   0,   0,   0 ],
+  bass:      [ +6,  +4,   0,  -1,  -1 ],
+  treble:    [ -1,  -1,   0,  +4,  +6 ],
+  vocal:     [ -2,   0,  +4,  +3,  +1 ],
+  warm:      [ +3,  +2,  +1,  -2,  -3 ],
+  classical: [ +3,  +1,  -1,  +2,  +4 ],
+};
+// 5 BiquadFilterNode Q values — wider Q for musical EQ feel
+var EQ_FREQS = [60, 250, 1000, 4000, 12000];
+var EQ_QS    = [0.7, 1.0, 1.2, 1.0, 0.7];
+
+var _eqCtx    = null;
+var _eqSource = null;
+var _eqFilters = null;   // 5 BiquadFilterNodes
+var _eqPreset  = SharedUI.load('music-eq', 'flat');
+
+function _initEQ() {
+  // Must be called from a direct user gesture (click) so resume() works
+  if (_eqCtx) { _eqCtx.resume(); return; }
+  _eqCtx    = new (window.AudioContext || window.webkitAudioContext)();
+  _eqSource = _eqCtx.createMediaElementSource(musicAudio);
+  _eqFilters = EQ_FREQS.map(function(freq, i) {
+    var f = _eqCtx.createBiquadFilter();
+    f.type = 'peaking'; f.frequency.value = freq;
+    f.Q.value = EQ_QS[i]; f.gain.value = 0;
+    return f;
+  });
+  // Chain: source → f0 → f1 → f2 → f3 → f4 → destination
+  _eqSource.connect(_eqFilters[0]);
+  for (var i = 0; i < _eqFilters.length - 1; i++) {
+    _eqFilters[i].connect(_eqFilters[i+1]);
+  }
+  _eqFilters[_eqFilters.length-1].connect(_eqCtx.destination);
+  _eqCtx.resume(); // safe: we're inside a click handler
+}
+
+function setEQ(preset) {
+  // _initEQ() is always called from a button click — guaranteed user gesture
+  _initEQ();
+  _eqPreset = preset;
+  var gains = EQ_PRESETS[preset] || EQ_PRESETS.flat;
+  _eqFilters.forEach(function(f, i) { f.gain.value = gains[i]; });
+  SharedUI.save('music-eq', preset);
+  document.querySelectorAll('.eq-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.eq === preset);
+  });
+}
+
+// Visually restore saved preset on load (no chain built yet)
+(function() {
+  var saved = SharedUI.load('music-eq', 'flat');
+  document.querySelectorAll('.eq-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.eq === saved);
+  });
+})();
+
+
 function playFocusDone() {
   _duckMusic(1800);
   var ctx=_getAudioCtx();[0,0.38].forEach(function(d){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(440,ctx.currentTime+d);o.frequency.exponentialRampToValueAtTime(330,ctx.currentTime+d+0.35);g.gain.setValueAtTime(0,ctx.currentTime+d);g.gain.linearRampToValueAtTime(0.38,ctx.currentTime+d+0.03);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.7);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.75);});
