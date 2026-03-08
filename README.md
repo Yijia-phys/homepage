@@ -56,6 +56,7 @@ Supported formats: `mp3` `flac` `ogg` `wav` `aac` `m4a`
 - Volume control persisted to `localStorage`
 - Music auto-ducks to 20% on pomodoro alert, then fades back
 - Track duration shown in playlist
+- 5-band EQ (60 Hz / 250 Hz / 1 kHz / 4 kHz / 12 kHz) with 6 presets: Flat · Bass · Treble · Vocal · Warm · Classical
 - Keyboard: `Q` prev · `W` play/pause · `E` next · `A` cycle mode · `S` toggle lyrics · `D` toggle playlist · `F` cycle loop
 
 ### Stack
@@ -179,6 +180,7 @@ MIT — do whatever you want with it.
 - 音量控制并持久化保存
 - 番茄钟提示音触发时自动将音乐音量降至 20%，提示音结束后淡回
 - 播放列表显示每首曲目时长
+- 五段 EQ 均衡器（60 Hz / 250 Hz / 1 kHz / 4 kHz / 12 kHz），六种预设：Flat · Bass · Treble · Vocal · Warm · Classical
 - 键盘快捷键：`Q` 上一曲 · `W` 播放/暂停 · `E` 下一曲 · `A` 切换模式 · `S` 切换歌词 · `D` 切换播放列表 · `F` 切换循环模式
 
 ### 技术栈
