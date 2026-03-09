@@ -571,9 +571,11 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
     </div>
   </div>
   <div class="s-title">Animation</div>
-  <div class="music-toggle-row">
-    <span>Wave background</span>
-    <div class="toggle-switch" id="toggle-waves" onclick="toggleWaves()"></div>
+  <div class="anim-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="anim-btn" data-anim="waves"     onclick="setAnim('waves')">Waves</div>
+    <div class="anim-btn" data-anim="lorenz"    onclick="setAnim('lorenz')">Lorenz</div>
+    <div class="anim-btn" data-anim="particles" onclick="setAnim('particles')">Particles</div>
+    <div class="anim-btn" data-anim="off"       onclick="setAnim('off')">Off</div>
   </div>
   <button class="settings-close" onclick="toggleMainSettings()">Close &#x2715;</button>
 </div>
@@ -765,18 +767,19 @@ function fmt(s) { var m=Math.floor(s/60),sec=s%60; return String(m).padStart(2,'
 SharedUI.initWallpaper();
 SharedUI.initDisplay(['blur','bright','overlay','ui']);
 SharedUI.initWaves();
-// Wave toggle
-(function(){
-  var on = SharedUI.load('waves-on', true);
-  SharedUI.setWavesVisible(on);
-  el('toggle-waves').classList.toggle('on', on);
-})();
-function toggleWaves() {
-  var on = !el('toggle-waves').classList.contains('on');
-  el('toggle-waves').classList.toggle('on', on);
-  SharedUI.setWavesVisible(on);
-  SharedUI.save('waves-on', on);
+// ── Animation mode ────────────────────────────────────────────────────
+function setAnim(mode) {
+  SharedUI.setAnimationMode(mode);
+  document.querySelectorAll('.anim-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.anim === mode);
+  });
 }
+(function(){
+  var m = SharedUI.getAnimationMode();
+  document.querySelectorAll('.anim-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.anim === m);
+  });
+})();
 var toggleMainSettings = SharedUI.initSettings('main-settings','#settings-gear');
 
 // ── Timezone ─────────────────────────────────────────────────────────

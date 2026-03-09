@@ -111,3 +111,21 @@ input[type=range]::-webkit-slider-thumb {
 .wp-gradient-3 { background: linear-gradient(135deg, #141e30 0%, #243b55 100%); }
 .wp-gradient-4 { background: linear-gradient(135deg, #1a0533 0%, #6a003a 50%, #ff6e00 100%); }
 .wp-gradient-5 { background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%); }
+
+/* ── Animation mode selector ── */
+.anim-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:.35rem;
+}
+.anim-btn {
+  font-family:"JetBrains Mono",monospace; font-size:.58rem;
+  letter-spacing:.05em; text-transform:uppercase;
+  padding:.38rem .3rem; border-radius:7px; text-align:center;
+  background:rgba(255,255,255,.06); border:1px solid var(--border);
+  color:var(--muted); cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.anim-btn:hover { background:rgba(255,255,255,.12); color:var(--text); }
+.anim-btn.active {
+  background:rgba(212,114,79,.18); color:var(--accent);
+  border-color:rgba(212,114,79,.4);
+}
