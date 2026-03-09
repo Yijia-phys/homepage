@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Focus Timer · Yijia Zhao</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -1162,7 +1161,7 @@ function updateLoopBtns() {
 
 musicAudio.addEventListener('ended', function(){
   if(music.loop==='single'){ musicAudio.currentTime=0; musicAudio.play(); return; }
-  if(music.loop==='shuffle'){ loadTrack(Math.floor(Math.random()*music.playlist.length)); musicAudio.play(); return; }
+  if(music.loop==='shuffle'){ var _ri; do { _ri=Math.floor(Math.random()*music.playlist.length); } while(_ri===music.index && music.playlist.length>1); loadTrack(_ri); musicAudio.play(); return; }
   if(music.index < music.playlist.length-1){ loadTrack(music.index+1); musicAudio.play(); }
   // else: end of sequence, stay stopped
 });
