@@ -354,6 +354,19 @@ body.immersive-mode #music-settings-panel {
 }
 
 /* ── Immersive: expand/collapse icon (top-left, right of music btn) ── */
+#imm-disc-btn {
+  position:fixed; top:1.6rem; z-index:30;
+  left:calc(1.8rem + 36px + .6rem + 36px + .6rem);
+  width:36px; height:36px; border-radius:10px;
+  background:rgba(255,255,255,.07); border:1px solid var(--border);
+  display:none; align-items:center; justify-content:center;
+  cursor:pointer; transition:background .15s,color .15s,border-color .15s;
+}
+body.immersive-mode #imm-disc-btn { display:flex; }
+#imm-disc-btn:hover { background:rgba(255,255,255,.14); color:var(--text); }
+#imm-disc-btn.active { background:rgba(212,114,79,.2); color:var(--accent); border-color:rgba(212,114,79,.4); }
+#imm-disc-btn svg { width:15px; height:15px; }
+
 #imm-toggle-btn {
   position:fixed; top:1.6rem; z-index:30;
   left:calc(1.8rem + 36px + .6rem);
@@ -517,6 +530,11 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.892 3.433-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.892-1.64-.901-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52z"/></svg>
 </div>
 
+<!-- Immersive: disc spin toggle (top-left, 3rd slot) -->
+<div id="imm-disc-btn" class="active" onclick="toggleDiscSpin()" title="Toggle disc rotation">
+  <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1m0 1a6 6 0 1 1 0 12A6 6 0 0 1 8 2m0 2.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7M8 6a2 2 0 1 1 0 4A2 2 0 0 1 8 6"/></svg>
+</div>
+
 <!-- Immersive: expand/collapse icon (top-left, right of music btn) -->
 <div id="imm-toggle-btn" onclick="toggleView()">
   <svg id="imm-toggle-icon" viewBox="0 0 16 16" fill="currentColor">
@@ -551,6 +569,11 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
       <div class="tz-btn" onclick="resetTz()">Local</div>
       <div class="tz-btn tp" onclick="applyTz()">Apply</div>
     </div>
+  </div>
+  <div class="s-title">Animation</div>
+  <div class="music-toggle-row">
+    <span>Wave background</span>
+    <div class="toggle-switch" id="toggle-waves" onclick="toggleWaves()"></div>
   </div>
   <button class="settings-close" onclick="toggleMainSettings()">Close &#x2715;</button>
 </div>
@@ -742,6 +765,18 @@ function fmt(s) { var m=Math.floor(s/60),sec=s%60; return String(m).padStart(2,'
 SharedUI.initWallpaper();
 SharedUI.initDisplay(['blur','bright','overlay','ui']);
 SharedUI.initWaves();
+// Wave toggle
+(function(){
+  var on = SharedUI.load('waves-on', true);
+  SharedUI.setWavesVisible(on);
+  el('toggle-waves').classList.toggle('on', on);
+})();
+function toggleWaves() {
+  var on = !el('toggle-waves').classList.contains('on');
+  el('toggle-waves').classList.toggle('on', on);
+  SharedUI.setWavesVisible(on);
+  SharedUI.save('waves-on', on);
+}
 var toggleMainSettings = SharedUI.initSettings('main-settings','#settings-gear');
 
 // ── Timezone ─────────────────────────────────────────────────────────
@@ -1073,7 +1108,7 @@ async function scanMusicFolder() {
 
   music.index = 0;
   el('music-track-count').textContent = music.playlist.length + ' tracks';
-  renderPlaylist();
+  renderPlaylist(true);
   if (music.playlist.length > 0) loadTrack(0);
 }
 
@@ -1203,21 +1238,34 @@ function refreshPlayIcons(paused) {
 // ── JS-driven disc rotation (reliable across all browsers) ──────────
 var _discAngle = 0;
 var _discLastTs = null;
+var _discPaused = false;       // true when page is hidden
+var _discSpinEnabled = true;   // user toggle
 // Single always-running rAF loop — polls state directly, no events needed
 (function _discFrame(ts) {
-  var shouldSpin = !musicAudio.paused && music.mode === 'immersive';
-  if (_discLastTs !== null && shouldSpin) {
-    _discAngle += (ts - _discLastTs) * (360 / 12000); // 12s/revolution
-  }
-  _discLastTs = ts;
-  if (music.mode === 'immersive') {
-    el('disc-img-el').style.transform = 'rotate(' + (_discAngle % 360).toFixed(2) + 'deg)';
+  if (!_discPaused) {
+    var shouldSpin = !musicAudio.paused && music.mode === 'immersive' && _discSpinEnabled;
+    if (_discLastTs !== null && shouldSpin) {
+      _discAngle += (ts - _discLastTs) * (360 / 12000);
+    }
+    _discLastTs = ts;
+    if (music.mode === 'immersive') {
+      el('disc-img-el').style.transform = 'rotate(' + (_discAngle % 360).toFixed(2) + 'deg)';
+    }
+  } else {
+    _discLastTs = null; // reset so no jump when page becomes visible again
   }
   requestAnimationFrame(_discFrame);
 }(performance.now()));
-// kept for call-site compatibility, now no-ops
+document.addEventListener('visibilitychange', function() {
+  _discPaused = document.hidden;
+});
 function updateDiscSpin() {}
 function initDiscRotation() {}
+function toggleDiscSpin() {
+  _discSpinEnabled = !_discSpinEnabled;
+  el('imm-disc-btn').classList.toggle('active', _discSpinEnabled);
+  if (!_discSpinEnabled) _discLastTs = null; // freeze cleanly
+}
 
 // ── Lyrics ───────────────────────────────────────────────────────────
 var _lyricIdx = -1;
@@ -1287,21 +1335,52 @@ function refreshMusicUI() {
 }
 
 // ── Playlist panel ────────────────────────────────────────────────────
-function renderPlaylist() {
-  var container = el('playlist-items'); container.innerHTML='';
-  music.playlist.forEach(function(t,i){
-    var item=document.createElement('div');
-    item.className='playlist-item'+(i===music.index?' active':'');
-    var dur = '';
+function _buildPlaylistItem(i) {
+  var t = music.playlist[i];
+  var item = document.createElement('div');
+  item.className = 'playlist-item' + (i === music.index ? ' active' : '');
+  item.dataset.idx = i;
+  var dur = '';
+  if (t.duration > 0) {
+    var dm = Math.floor(t.duration/60), ds = Math.floor(t.duration%60);
+    dur = dm + ':' + (ds < 10 ? '0' : '') + ds;
+  }
+  item.innerHTML = '<span class="playlist-item-idx">' + (i+1) + '</span>'
+    + '<span class="playlist-item-name">' + (t.title||t.name) + '</span>'
+    + (dur ? '<span class="playlist-item-dur">' + dur + '</span>' : '');
+  item.onclick = (function(idx){ return function(){ loadTrack(idx); if(!musicAudio.paused) musicAudio.play(); }; })(i);
+  return item;
+}
+function renderPlaylist(fullRebuild) {
+  var container = el('playlist-items');
+  var existingItems = container.children;
+  // Full rebuild: when track count changes or explicitly requested
+  if (fullRebuild || existingItems.length !== music.playlist.length) {
+    container.innerHTML = '';
+    music.playlist.forEach(function(_, i) { container.appendChild(_buildPlaylistItem(i)); });
+    return;
+  }
+  // Incremental: only update active class + duration if it just loaded
+  music.playlist.forEach(function(t, i) {
+    var item = existingItems[i];
+    if (!item) return;
+    var shouldBeActive = i === music.index;
+    var isActive = item.classList.contains('active');
+    if (shouldBeActive !== isActive) item.classList.toggle('active', shouldBeActive);
+    // Update duration cell if it just arrived
+    var durEl = item.querySelector('.playlist-item-dur');
     if (t.duration > 0) {
       var dm = Math.floor(t.duration/60), ds = Math.floor(t.duration%60);
-      dur = dm+':'+(ds<10?'0':'')+ds;
+      var durStr = dm + ':' + (ds < 10 ? '0' : '') + ds;
+      if (!durEl) {
+        var span = document.createElement('span');
+        span.className = 'playlist-item-dur';
+        span.textContent = durStr;
+        item.appendChild(span);
+      } else if (durEl.textContent !== durStr) {
+        durEl.textContent = durStr;
+      }
     }
-    item.innerHTML='<span class="playlist-item-idx">'+(i+1)+'</span>'
-      +'<span class="playlist-item-name">'+(t.title||t.name)+'</span>'
-      +(dur?'<span class="playlist-item-dur">'+dur+'</span>':'');
-    item.onclick=function(){loadTrack(i); if(!musicAudio.paused||true) musicAudio.play();};
-    container.appendChild(item);
   });
 }
 
