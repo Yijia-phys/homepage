@@ -108,8 +108,17 @@
         reader.onload = function (ev) {
           var id = 'user-' + Date.now();
           _userWps.push({ id: id, dataUrl: ev.target.result });
-          if (_userWps.length > 8) _userWps = _userWps.slice(-8);
-          save('user-wps', _userWps);
+          if (_userWps.length > 5) _userWps = _userWps.slice(-5);
+          // Quota-safe save: if storage is full, drop oldest until it fits
+          var saved = false;
+          while (_userWps.length > 0 && !saved) {
+            try {
+              localStorage.setItem('user-wps', JSON.stringify(_userWps));
+              saved = true;
+            } catch (e) {
+              _userWps.shift(); // drop oldest and retry
+            }
+          }
           _refreshThumbs();
           _switchWallpaper(id);
         };
@@ -261,7 +270,19 @@
       }
     }
 
-    (function loop(ts) { draw((ts || 0) * 0.001); requestAnimationFrame(loop); }());
+    var _wavePaused = false;
+    var _waveVisible = true;
+    document.addEventListener('visibilitychange', function() { _wavePaused = document.hidden; });
+    (function loop(ts) {
+      if (!_wavePaused && _waveVisible) draw((ts || 0) * 0.001);
+      requestAnimationFrame(loop);
+    }());
+    // expose so pages can toggle waves on/off
+    wc._setVisible = function(v) {
+      _waveVisible = v;
+      wc.style.opacity = v ? '' : '0';
+      if (v) draw(performance.now() * 0.001); // repaint immediately when turning on
+    };
   }
 
   // ── Shared CSS injection ───────────────────────────────────────────
@@ -290,6 +311,10 @@
     initDisplay:   initDisplay,
     initSettings:  initSettings,
     initWaves:     initWaves,
+    setWavesVisible: function(v) {
+      var wc = document.getElementById('wave-canvas');
+      if (wc && wc._setVisible) wc._setVisible(v);
+    },
   };
 
 }(window));
