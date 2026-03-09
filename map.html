@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Location Trace · Yijia Zhao</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -155,6 +154,13 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro',
   <div class="slider-row"><div class="slider-label">Blur <span id="lbl-blur">8px</span></div><input type="range" id="sl-blur" min="0" max="30" value="8"></div>
   <div class="slider-row"><div class="slider-label">Brightness <span id="lbl-bright">85%</span></div><input type="range" id="sl-bright" min="20" max="100" value="85"></div>
   <div class="slider-row"><div class="slider-label">Overlay opacity <span id="lbl-overlay">55%</span></div><input type="range" id="sl-overlay" min="0" max="90" value="55"></div>
+  <div class="s-title">Animation</div>
+  <div class="anim-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="anim-btn" data-anim="waves"     onclick="setAnim('waves')">Waves</div>
+    <div class="anim-btn" data-anim="lorenz"    onclick="setAnim('lorenz')">Lorenz</div>
+    <div class="anim-btn" data-anim="particles" onclick="setAnim('particles')">Particles</div>
+    <div class="anim-btn" data-anim="off"       onclick="setAnim('off')">Off</div>
+  </div>
   <button class="settings-close" onclick="toggleSettings()">Close ✕</button>
 </div>
 
@@ -213,7 +219,7 @@ var CITIES = [
     name:  'Shenyang',
     lon:    123.43, lat: 41.80,
     type:  'current',
-    photo: 'assets/photos/shenyang20240806.jpg',
+    photo: 'assets/photos/shenyang.jpg',
     desc:  'The vibrant capital of Liaoning, perfectly blends Imperial history with industrial pride. My hometown.',
     meta:  '2007 - present'
   },
@@ -427,6 +433,20 @@ window.addEventListener('load', function () {
     });
 });
 window.addEventListener('resize', drawMapStatic);
+
+// ── Animation mode ────────────────────────────────────────────────────
+function setAnim(mode) {
+  SharedUI.setAnimationMode(mode);
+  document.querySelectorAll('.anim-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.anim === mode);
+  });
+}
+(function(){
+  var m = SharedUI.getAnimationMode();
+  document.querySelectorAll('.anim-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.anim === m);
+  });
+})();
 </script>
 </body>
 </html>
