@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Focus Timer · Yijia Zhao</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -81,6 +82,7 @@ html,body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro',
   width:300px; padding:1.1rem 1.2rem;
   display:none; flex-direction:column; gap:.9rem;
   max-height:75vh; overflow-y:auto;
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
 #music-settings-panel.open { display:flex; }
 
@@ -217,6 +219,7 @@ body.immersive-mode .settings-panel {
 }
 body.immersive-mode #music-settings-panel {
   bottom:auto; top:4.5rem; left:1.8rem; right:auto;
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
 
 
@@ -226,6 +229,7 @@ body.immersive-mode #music-settings-panel {
   width:min(520px, calc(100vw - 3.6rem));
   z-index:20; display:flex; align-items:center; gap:.9rem;
   padding:.65rem .9rem;
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
 #bar-cover {
   width:52px; height:52px; border-radius:7px; object-fit:cover; flex-shrink:0;
@@ -279,6 +283,7 @@ body.immersive-mode #music-settings-panel {
   pointer-events:none; text-align:center;
   width:min(560px, calc(100vw - 4rem));
   display:flex; flex-direction:column; align-items:center; gap:.18rem;
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
 
 /* ── Player card (collapsed + player mode) ── */
@@ -290,6 +295,7 @@ body.immersive-mode #music-settings-panel {
   z-index:20; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:.5rem;
   padding:.75rem 1.1rem .7rem;
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
 #card-cover {
   width:min(100px,28%); aspect-ratio:1; border-radius:9px; object-fit:cover;
@@ -360,9 +366,11 @@ body.immersive-mode #music-settings-panel {
   width:36px; height:36px; border-radius:10px;
   background:rgba(255,255,255,.07); border:1px solid var(--border);
   display:none; align-items:center; justify-content:center;
-  cursor:pointer; transition:background .15s,color .15s,border-color .15s;
+  cursor:pointer; opacity:var(--ui-opacity); transition:opacity .3s,background .15s,color .15s,border-color .15s;
 }
-body.immersive-mode #imm-disc-btn { display:flex; }
+body.immersive-mode #imm-disc-btn { display:flex;
+  opacity:var(--ui-opacity); transition:opacity .3s;
+}
 #imm-disc-btn:hover { background:rgba(255,255,255,.14); color:var(--text); }
 #imm-disc-btn.active { background:rgba(212,114,79,.2); color:var(--accent); border-color:rgba(212,114,79,.4); }
 #imm-disc-btn svg { width:15px; height:15px; }
@@ -373,9 +381,11 @@ body.immersive-mode #imm-disc-btn { display:flex; }
   width:36px; height:36px; border-radius:10px;
   background:rgba(255,255,255,.07); border:1px solid var(--border);
   display:none; align-items:center; justify-content:center;
-  cursor:pointer; color:var(--muted); transition:background .15s,color .15s;
+  cursor:pointer; color:var(--muted); opacity:var(--ui-opacity); transition:opacity .3s,background .15s,color .15s;
 }
-body.immersive-mode #imm-toggle-btn { display:flex; }
+body.immersive-mode #imm-toggle-btn { display:flex;
+  opacity:var(--ui-opacity); transition:opacity .3s;
+}
 #imm-toggle-btn:hover { background:rgba(255,255,255,.14); color:var(--text); }
 #imm-toggle-btn svg { width:15px; height:15px; }
 
@@ -384,8 +394,11 @@ body.immersive-mode #imm-toggle-btn { display:flex; }
   position:fixed; top:1.6rem; z-index:30;
   right:calc(1.8rem + 36px + .6rem);
   display:none; align-items:center; gap:.5rem;
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
-body.immersive-mode #imm-pomo-btns { display:flex; }
+body.immersive-mode #imm-pomo-btns { display:flex;
+  opacity:var(--ui-opacity); transition:opacity .3s;
+}
 /* also hide normal controls in immersive */
 body.immersive-mode #controls { display:none !important; }
 .imm-pomo-btn {
@@ -430,6 +443,7 @@ body.immersive-mode #controls { display:none !important; }
   text-align:center; pointer-events:none;
   width:min(640px, calc(100vw - 6rem));
   display:flex; flex-direction:column; align-items:center; gap:.28rem;
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
 
 /* ── Immersive: Spotify-style bottom bar ── */
@@ -437,6 +451,7 @@ body.immersive-mode #controls { display:none !important; }
   position:fixed; bottom:0; left:0; right:0; z-index:35;
   background:rgba(8,6,4,.88); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
   border-top:1px solid var(--border);
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
 #imm-progress-wrap {
   width:100%; height:3px; background:rgba(255,255,255,.12);
@@ -464,6 +479,7 @@ body.immersive-mode #controls { display:none !important; }
   width:280px; max-height:50vh; overflow-y:scroll;
   padding:.9rem 1rem; display:none; flex-direction:column; gap:.3rem;
   scrollbar-width:thin; scrollbar-color:rgba(212,114,79,.35) rgba(255,255,255,.06);
+  opacity:var(--ui-opacity); transition:opacity .3s;
 }
 #music-playlist::-webkit-scrollbar { width:6px; }
 #music-playlist::-webkit-scrollbar-track { background:rgba(255,255,255,.04); border-radius:3px; }
@@ -477,7 +493,7 @@ body.immersive-mode #music-playlist {
   left:auto; right:0; bottom:72px;
   width:260px; max-height:calc(100vh - 72px); border-radius:0;
   border-right:none;
-  transform:translateX(100%); transition:transform .28s ease; display:flex;
+  transform:translateX(100%); opacity:var(--ui-opacity); transition:opacity .3s,transform .28s ease; display:flex;
 }
 body.immersive-mode #music-playlist.open { transform:translateX(0); }
 .playlist-title-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem; }
