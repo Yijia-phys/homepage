@@ -16,20 +16,24 @@
 | `index.html` | Main homepage — identity card, live clock, site links, wallpaper system |
 | `map.html` | Interactive world map with city markers, location info panel, and double-click lock |
 | `clock.html` | Pomodoro focus timer with music player |
+| `404.html` | Custom 404 page — conformal map animation of w = e^z |
 
 ### Features
 
 **Shared**
 - Glassmorphism UI — frosted glass cards with adjustable blur, brightness, overlay opacity, and UI opacity
-- Wallpaper system — 5 built-in gradient presets + custom image upload (max 8), persisted via `localStorage`
-- Animated wave canvas background, shared across all pages via `shared.js` / `shared.css`
-- Live clock with IANA timezone support
+- Wallpaper system — 5 built-in gradient presets + custom image upload (max 5), persisted via **IndexedDB** (auto-migrates from legacy localStorage)
+- Animated background canvas — Waves, Lorenz attractor, or cloud-chamber particles; shared across all pages via `shared.js` / `shared.css`
+- Live clock with IANA timezone support and substring autocomplete (e.g. type `tokyo` → `Asia/Tokyo`)
+- Design tokens (CSS variables) defined once in `shared.css` — single source of truth
 
 **map.html**
 - World map via `d3-geo` equirectangular projection with graticule grid and scanline/vignette overlays
+- City data loaded from `locations.json` — edit the JSON to add cities, no HTML changes needed. Falls back to inline data if the file is absent
 - Animated city markers — pulse for current location, glow for visited cities
 - Hover to preview city photo (glitch effect), description, and date range
 - Double-click a city to pin the panel; double-click again to release
+- Settings panel includes Timezone section, consistent with index.html
 
 **clock.html — Focus Timer**
 - Pomodoro engine with customizable focus/break durations and session count
@@ -50,6 +54,7 @@ Supported formats: `mp3` `flac` `ogg` `wav` `aac` `m4a`
 | Immersive | Full-screen rotating vinyl disc, Spotify-style bottom bar, centered lyrics |
 
 - Cover art and metadata from embedded ID3/Vorbis tags via [jsmediatags](https://github.com/nicktindall/jsmediatags)
+- Falls back to `/assets/default-cover.png` when a track has no embedded cover art
 - LRC lyric sync — place a `.lrc` file next to the audio file (same name); gaps > 4 s auto-labeled `· Music ·`
 - Three-line lyric display (prev / current / next) with directional slide-in animation
 - Loop modes: sequence → single → shuffle
@@ -70,7 +75,7 @@ No build tools. No frameworks. Plain HTML + CSS + vanilla JS.
 | [jsmediatags](https://github.com/nicktindall/jsmediatags) | 3.9.5 | Audio tag reading |
 | [Google Fonts](https://fonts.google.com) | — | Playfair Display, Crimson Pro, JetBrains Mono |
 
-Everything else — TopoJSON decoding, canvas rendering, wallpaper switching, wave animation, pomodoro engine, music player, LRC parser — is written from scratch in vanilla JS.
+Everything else — TopoJSON decoding, canvas rendering, wallpaper switching, animation engine, pomodoro engine, music player, LRC parser, timezone autocomplete — is written from scratch in vanilla JS.
 
 ### File Structure
 
@@ -79,20 +84,24 @@ Everything else — TopoJSON decoding, canvas rendering, wallpaper switching, wa
 ├── index.html
 ├── clock.html
 ├── map.html
+├── 404.html
 ├── shared.js          # Shared UI module (logic)
-├── shared.css         # Shared UI styles
+├── shared.css         # Shared UI styles + design tokens
+├── locations.json     # City data for map.html
 └── assets/
-    └── photos/        # City photos for map.html
+    ├── favicon.svg
+    ├── default-cover.png   # Fallback cover art for music player
+    └── photos/             # City photos for map.html
 ```
 
 `shared.js` public API:
 
 ```js
-SharedUI.injectStyles()                        // inject shared.css into <head>
-SharedUI.initWallpaper()                       // wallpaper grid + upload
+SharedUI.initWallpaper()                       // wallpaper grid + upload (IndexedDB)
 SharedUI.initDisplay(['blur','bright', ...])   // display sliders
-SharedUI.initWaves()                           // canvas wave animation
+SharedUI.initWaves()                           // canvas animation (waves / lorenz / particles)
 SharedUI.initSettings(panelId, gearSelector)  // returns toggle function
+SharedUI.initTzAutocomplete(inputId)          // substring timezone autocomplete dropdown
 SharedUI.save(key, value)
 SharedUI.load(key, default)
 ```
@@ -102,9 +111,9 @@ SharedUI.load(key, default)
 | Key | Type | Description |
 |---|---|---|
 | `current-wp` | string | Active wallpaper ID |
-| `user-wps` | JSON | Uploaded wallpaper images (base64, max 8) |
-| `display` | JSON | Blur, brightness, overlay, UI opacity |
+| `display` | JSON | Blur, brightness, overlay, card/UI opacity |
 | `timezone` | string | IANA timezone (e.g. `Asia/Shanghai`) |
+| `anim-mode` | string | `waves` / `lorenz` / `particles` / `off` |
 | `pomo-focus` | number | Focus duration (minutes) |
 | `pomo-break` | number | Break duration (minutes) |
 | `pomo-count` | number | Pomodoro session count |
@@ -112,6 +121,9 @@ SharedUI.load(key, default)
 | `music-vol` | number | Volume (0–1) |
 | `music-loop` | string | `sequence` / `single` / `shuffle` |
 | `music-lyrics` | bool | Lyrics on/off |
+| `music-eq` | string | Active EQ preset |
+
+Wallpaper images (base64, max 5) are stored in **IndexedDB** (`yijialog-wp`), not localStorage.
 
 ### Browser Compatibility
 
@@ -140,20 +152,24 @@ MIT — do whatever you want with it.
 | `index.html` | 主页 — 个人信息卡、实时时钟、站点链接、壁纸系统 |
 | `map.html` | 交互式世界地图，带城市标记、信息面板和双击锁定 |
 | `clock.html` | 番茄钟专注计时器 + 音乐播放器 |
+| `404.html` | 自定义 404 页面 — w = e^z 保角映射动画 |
 
 ### 功能
 
 **通用**
 - 玻璃拟态 UI — 毛玻璃卡片，支持调节模糊、亮度、遮罩透明度、界面透明度
-- 壁纸系统 — 5 种内置渐变预设 + 自定义图片上传（最多 8 张），通过 `localStorage` 持久化
-- 全页面共享的 canvas 波浪动画背景（`shared.js` / `shared.css`）
-- 支持 IANA 时区的实时时钟
+- 壁纸系统 — 5 种内置渐变预设 + 自定义图片上传（最多 5 张），通过 **IndexedDB** 持久化（自动从旧版 localStorage 迁移）
+- 全页面共享的 canvas 动画背景 — 波浪、洛伦兹吸引子或云雾粒子（`shared.js` / `shared.css`）
+- 支持 IANA 时区的实时时钟，带子串自动补全（输入 `tokyo` 即提示 `Asia/Tokyo`）
+- CSS 变量（设计令牌）统一定义在 `shared.css`，单一来源
 
 **map.html**
 - D3.js 等矩形投影世界地图，带经纬网格和扫描线/晕影叠加效果
+- 城市数据从 `locations.json` 加载，只需编辑 JSON 即可添加城市，无需改 HTML；文件不存在时自动回退到内联数据
 - 城市标记动画 — 当前位置脉冲动效，曾到访城市发光效果
 - 悬停预览城市照片（故障艺术效果）、描述文字和时间范围
 - 双击城市固定信息面板，再次双击取消
+- 设置面板新增时区区块，与 index.html 保持一致
 
 **clock.html — 番茄钟**
 - 可自定义专注/休息时长和组数的番茄钟引擎
@@ -174,6 +190,7 @@ MIT — do whatever you want with it.
 | 沉浸 | 全屏旋转黑胶唱片背景、Spotify 风格底栏、居中歌词 |
 
 - 通过 jsmediatags 读取 ID3/Vorbis 内嵌标签获取封面和元数据
+- 没有内嵌封面时自动回退到 `/assets/default-cover.png`
 - LRC 歌词同步 — 将同名 `.lrc` 文件放在音频文件旁即可；超过 4 秒的空白自动标注 `· Music ·`
 - 三行歌词显示（上一行 / 当前行 / 下一行），带方向性滑入动画
 - 循环模式：顺序 → 单曲循环 → 随机
@@ -194,7 +211,7 @@ MIT — do whatever you want with it.
 | [jsmediatags](https://github.com/nicktindall/jsmediatags) | 3.9.5 | 音频标签读取 |
 | [Google Fonts](https://fonts.google.com) | — | Playfair Display、Crimson Pro、JetBrains Mono |
 
-其余所有内容——TopoJSON 解码、canvas 渲染、壁纸切换、波浪动画、番茄钟引擎、音乐播放器、LRC 解析器——均从零用原生 JS 实现。
+其余所有内容——TopoJSON 解码、canvas 渲染、壁纸切换、动画引擎、番茄钟引擎、音乐播放器、LRC 解析器、时区自动补全——均从零用原生 JS 实现。
 
 ### 文件结构
 
@@ -203,20 +220,24 @@ MIT — do whatever you want with it.
 ├── index.html
 ├── clock.html
 ├── map.html
+├── 404.html
 ├── shared.js          # 共享 UI 模块（逻辑）
-├── shared.css         # 共享 UI 样式
+├── shared.css         # 共享 UI 样式 + 设计令牌
+├── locations.json     # map.html 城市数据
 └── assets/
-    └── photos/        # map.html 使用的城市照片
+    ├── favicon.svg
+    ├── default-cover.png   # 音乐播放器封面回退图
+    └── photos/             # map.html 城市照片
 ```
 
 `shared.js` 公共 API：
 
 ```js
-SharedUI.injectStyles()                        // 将 shared.css 注入 <head>
-SharedUI.initWallpaper()                       // 壁纸网格 + 上传
+SharedUI.initWallpaper()                       // 壁纸网格 + 上传（IndexedDB）
 SharedUI.initDisplay(['blur','bright', ...])   // 显示调节滑块
-SharedUI.initWaves()                           // canvas 波浪动画
+SharedUI.initWaves()                           // canvas 动画（波浪 / 洛伦兹 / 粒子）
 SharedUI.initSettings(panelId, gearSelector)  // 返回设置面板切换函数
+SharedUI.initTzAutocomplete(inputId)          // 子串时区自动补全下拉
 SharedUI.save(key, value)
 SharedUI.load(key, default)
 ```
@@ -226,9 +247,9 @@ SharedUI.load(key, default)
 | 键 | 类型 | 描述 |
 |---|---|---|
 | `current-wp` | string | 当前壁纸 ID |
-| `user-wps` | JSON | 用户上传的壁纸图片（base64，最多 8 张） |
 | `display` | JSON | 模糊、亮度、遮罩、界面透明度 |
 | `timezone` | string | IANA 时区（如 `Asia/Shanghai`） |
+| `anim-mode` | string | `waves` / `lorenz` / `particles` / `off` |
 | `pomo-focus` | number | 专注时长（分钟） |
 | `pomo-break` | number | 休息时长（分钟） |
 | `pomo-count` | number | 番茄钟组数 |
@@ -236,6 +257,9 @@ SharedUI.load(key, default)
 | `music-vol` | number | 音量（0–1） |
 | `music-loop` | string | `sequence` / `single` / `shuffle` |
 | `music-lyrics` | bool | 歌词显示开关 |
+| `music-eq` | string | 当前 EQ 预设 |
+
+壁纸图片（base64，最多 5 张）存储在 **IndexedDB**（`yijialog-wp`），不占用 localStorage。
 
 ### 浏览器兼容性
 
