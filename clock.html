@@ -7,13 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
 <style>
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-:root {
-  --accent:#d4724f; --glass:rgba(10,8,6,0.30); --border:rgba(255,255,255,0.09);
-  --text:rgba(255,255,255,0.92); --muted:rgba(255,255,255,0.50); --radius:14px; --blur:14px;
-  --ui-opacity:1;
-}
 html,body { width:100%; height:100%; overflow:hidden; font-family:'Crimson Pro',Georgia,serif; color:var(--text); user-select:none; }
 #bg,#bg-next { position:fixed; inset:0; z-index:0; background-size:cover; background-position:center; }
 #bg-next { opacity:0; transition:opacity .8s; }
@@ -773,7 +769,6 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 </div>
 
 <script src="shared.js"></script>
-<script>SharedUI.injectStyles();</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 <script>
 function el(id) { return document.getElementById(id); }
@@ -783,6 +778,7 @@ function fmt(s) { var m=Math.floor(s/60),sec=s%60; return String(m).padStart(2,'
 SharedUI.initWallpaper();
 SharedUI.initDisplay(['blur','bright','overlay','ui']);
 SharedUI.initWaves();
+SharedUI.initTzAutocomplete('tz-input');
 // ── Animation mode ────────────────────────────────────────────────────
 function setAnim(mode) {
   SharedUI.setAnimationMode(mode);
@@ -1328,14 +1324,15 @@ function updateLyricLine() {
 function refreshMusicUI() {
   if (!music.playlist.length) return;
   var t = music.playlist[music.index];
-  var cover = t.cover || '';
+  var _DEFAULT_COVER = '/assets/default-cover.png';
+  var cover = t.cover || _DEFAULT_COVER;
 
   // Bar
-  el('bar-cover').src   = cover; el('bar-cover').style.display = cover ? '' : 'none';
+  el('bar-cover').src   = cover; el('bar-cover').style.display = '';
   el('bar-title').textContent  = t.title  || t.name;
   el('bar-artist').textContent = t.artist || '\u2014';
   // Card
-  el('card-cover').src  = cover; el('card-cover').style.display = cover ? '' : 'none';
+  el('card-cover').src  = cover; el('card-cover').style.display = '';
   el('card-title').textContent  = t.title  || t.name;
   el('card-artist').textContent = t.artist || '\u2014';
   // Immersive
@@ -1343,8 +1340,8 @@ function refreshMusicUI() {
   el('imm-title').textContent  = t.title  || t.name;
   el('imm-artist').textContent = t.artist || '\u2014';
   // Disc
-  if(cover){ el('disc-img-el').src=cover; el('disc-img-el').classList.remove('no-cover'); }
-  else     { el('disc-img-el').src='';    el('disc-img-el').classList.add('no-cover'); }
+  el('disc-img-el').src = cover;
+  el('disc-img-el').classList.remove('no-cover');
 
   lrcLines = t.lrcText ? parseLrc(t.lrcText) : [];
   _lyricIdx = -1;

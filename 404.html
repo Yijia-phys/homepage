@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 · Yijia Zhao</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Crimson Pro', Georgia, serif;
+  color: var(--text); user-select: none;
+}
+#bg, #bg-next {
+  position: fixed; inset: 0; z-index: 0;
+  background-size: cover; background-position: center;
+}
+#bg-next { opacity: 0; transition: opacity .8s ease; }
+#overlay {
+  position: fixed; inset: 0; z-index: 1;
+  background: linear-gradient(135deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.35) 50%,rgba(0,0,0,.58) 100%);
+}
+#conf-canvas {
+  position: fixed; inset: 0; z-index: 2;
+  width: 100%; height: 100%; pointer-events: none;
+}
+.page {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  padding-bottom: 12vh;
+}
+
+/* ── Card ── */
+.main-card {
+  padding: 1.4rem 3.6rem 2.4rem;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; min-width: 300px;
+}
+.num {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(5rem, 14vw, 9rem);
+  font-weight: 400; line-height: 1; letter-spacing: -.03em;
+  color: var(--text);
+}
+.num em {
+  font-family: 'Playfair Display', serif;
+  font-style: normal; font-weight: 400;
+  font-size: 1em; letter-spacing: -.03em;
+  color: var(--accent);
+  vertical-align: 0;
+}
+
+.divider {
+  width: 2.6rem; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  margin: 1.25rem auto 1.15rem; opacity: .55;
+}
+.msg-main {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 1.05rem; font-style: italic;
+  color: var(--muted); letter-spacing: .01em;
+  margin-bottom: .4rem;
+}
+.msg-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .57rem; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(255,255,255,.22); margin-bottom: 1.55rem;
+}
+.back-link {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .64rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
+  padding: .42em 1.1em; border-radius: 7px;
+  border: 1px solid var(--border); background: rgba(255,255,255,.06);
+  transition: color .15s, border-color .15s, background .15s;
+}
+.back-link:hover {
+  color: var(--accent); border-color: rgba(212,114,79,.4);
+  background: rgba(212,114,79,.1);
+}
+
+/* ── Formula ── */
+.formula {
+  position: fixed; bottom: 1.6rem; right: 2rem; z-index: 20;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .6rem; letter-spacing: .06em;
+  color: rgba(255,255,255,.17);
+}
+.formula sup { font-size: .45rem; vertical-align: super; }
+</style>
+</head>
+<body>
+
+<div id="bg" class="wp-gradient-4"></div>
+<div id="bg-next"></div>
+<div id="overlay"></div>
+<canvas id="conf-canvas"></canvas>
+
+<div class="page">
+  <div class="main-card glass">
+    <div class="num">4<em>0</em>4</div>
+    <div class="divider"></div>
+    <div class="msg-main">the page you sought does not exist</div>
+    <div class="msg-sub">lost in the image of e<sup>z</sup></div>
+    <a class="back-link" href="index.html">← back to home</a>
+  </div>
+</div>
+
+<div class="formula">w = e<sup>z</sup></div>
+
+<script src="shared.js"></script>
+<script>
+(function () {
+  SharedUI.initWallpaper();
+
+  var canvas = document.getElementById('conf-canvas');
+  var ctx    = canvas.getContext('2d');
+  var W, H, cx, cy, scale;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    cx = W / 2; cy = H / 2;
+    scale = Math.min(W, H) * 0.115;
+  }
+  resize();
+  window.addEventListener('resize', function () { resize(); initParticles(); });
+
+  // ── Two-pass polyline (glow + crisp) ─────────────────────────────
+  function polyline(pts, r, g, b, alpha, lineWidth) {
+    if (pts.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(cx + pts[0][0] * scale, cy - pts[0][1] * scale);
+    for (var i = 1; i < pts.length; i++)
+      ctx.lineTo(cx + pts[i][0] * scale, cy - pts[i][1] * scale);
+
+    // Glow pass
+    ctx.shadowBlur  = 7;
+    ctx.shadowColor = 'rgba(' + r + ',' + g + ',' + b + ',' + (alpha * 0.9) + ')';
+    ctx.strokeStyle  = 'rgba(' + r + ',' + g + ',' + b + ',' + (alpha * 0.35) + ')';
+    ctx.lineWidth    = lineWidth * 2.8;
+    ctx.stroke();
+
+    // Crisp pass
+    ctx.shadowBlur  = 0;
+    ctx.strokeStyle  = 'rgba(' + r + ',' + g + ',' + b + ',' + (alpha * 0.85) + ')';
+    ctx.lineWidth    = lineWidth;
+    ctx.stroke();
+  }
+
+  // ── Ray: image of horizontal line y=theta under e^z ──────────────
+  function drawRay(theta, xMin, xMax, alpha) {
+    var pts = [], N = 70;
+    for (var i = 0; i <= N; i++) {
+      var x = xMin + (xMax - xMin) * i / N;
+      var r = Math.exp(x);
+      pts.push([r * Math.cos(theta), r * Math.sin(theta)]);
+    }
+    // Fade near branch cut ±π
+    var bf = Math.min(1, Math.abs(Math.abs(theta) - Math.PI) / (Math.PI * 0.25));
+    polyline(pts, 212, 114, 79, alpha * bf, 0.7);
+  }
+
+  // ── Circle: image of vertical line x=x0 under e^z ────────────────
+  function drawCircle(x0, tImag, alpha) {
+    var r = Math.exp(x0), rPx = r * scale;
+    if (rPx < 3 || rPx > Math.max(W, H) * 1.25) return;
+    var pts = [], N = 220;
+    for (var i = 0; i <= N; i++) {
+      var theta = -Math.PI + 2 * Math.PI * i / N + tImag;
+      pts.push([r * Math.cos(theta), r * Math.sin(theta)]);
+    }
+    var ef = Math.min(1, (rPx - 3) / 35) * Math.min(1, (Math.max(W, H) * 1.15 - rPx) / (scale * 1.8));
+    polyline(pts, 120, 175, 220, alpha * Math.max(0, ef), 0.65);
+  }
+
+  // ── Flow particles ────────────────────────────────────────────────
+  // Each particle travels along one grid curve.
+  // type 'ray'    → outward along a fixed angle ray
+  // type 'circle' → clockwise along a circle of fixed radius
+
+  var _particles = [];
+  var _N_PARTICLES = 28;
+
+  function _randParticle() {
+    if (Math.random() < 0.5) {
+      // Ray particle
+      var k   = Math.floor(Math.random() * 18);
+      var ang = -Math.PI + 2 * Math.PI * k / 18; // base angle (before rotation)
+      var xPos = -2.6 + Math.random() * 4.0;     // position along ray (log-radius)
+      return {
+        type: 'ray',
+        k:    k,
+        ang:  ang,
+        x:    xPos,
+        speed: 0.28 + Math.random() * 0.32,
+        life:  0, maxLife: 90 + Math.random() * 80,
+        hue: 0   // orange family
+      };
+    } else {
+      // Circle particle
+      var x0   = -2.8 + Math.random() * 5.4;
+      var phase = Math.random() * Math.PI * 2;
+      return {
+        type: 'circle',
+        x0:   x0,
+        phase: phase,
+        speed: (0.4 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1),
+        life:  0, maxLife: 100 + Math.random() * 100,
+        hue: 1   // blue family
+      };
+    }
+  }
+
+  function initParticles() {
+    _particles = [];
+    for (var i = 0; i < _N_PARTICLES; i++) {
+      var p = _randParticle();
+      p.life = Math.random() * p.maxLife; // stagger birth
+      _particles.push(p);
+    }
+  }
+  initParticles();
+
+  function drawParticle(wx, wy, alpha, isRay) {
+    var sx = cx + wx * scale, sy = cy - wy * scale;
+    var r = isRay ? 212 : 140, g = isRay ? 130 : 190, b = isRay ? 79 : 230;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 2.2, 0, Math.PI * 2);
+    ctx.shadowBlur  = 10;
+    ctx.shadowColor = 'rgba(' + r + ',' + g + ',' + b + ',' + (alpha * 0.9) + ')';
+    ctx.fillStyle   = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // ── Main loop ─────────────────────────────────────────────────────
+  var t = 0;
+
+  function draw(ts) {
+    t = (ts || 0) * 0.001;
+    var tImag = t * 0.07;
+    var tReal = 0.28 * Math.sin(t * 0.18);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineCap  = 'round';
+    ctx.lineJoin = 'round';
+
+    // Rays
+    var nRays = 18;
+    for (var k = 0; k < nRays; k++) {
+      var base  = -Math.PI + 2 * Math.PI * k / nRays;
+      var theta = base + tImag;
+      theta -= 2 * Math.PI * Math.floor((theta + Math.PI) / (2 * Math.PI));
+      drawRay(theta, -2.8 + tReal, 2.2 + tReal, 0.28);
+    }
+
+    // Circles
+    var step = 0.45, xMin = -3.5, xMax = 3.0;
+    for (var x0 = xMin; x0 <= xMax; x0 += step)
+      drawCircle(x0 + tReal, tImag, 0.26);
+
+    // Particles
+    var dt = 0.016;
+    for (var i = 0; i < _particles.length; i++) {
+      var p = _particles[i];
+      p.life += 1;
+      if (p.life > p.maxLife) { _particles[i] = _randParticle(); continue; }
+
+      var pAlpha = Math.sin(p.life / p.maxLife * Math.PI) * 0.9;
+      if (pAlpha < 0.01) continue;
+
+      if (p.type === 'ray') {
+        p.x += p.speed * dt;
+        // current angle = base + tImag (same rotation as drawn rays)
+        var ang = p.ang + tImag;
+        var rr  = Math.exp(p.x + tReal);
+        var wx  = rr * Math.cos(ang), wy = rr * Math.sin(ang);
+        // skip if way off screen
+        var px = cx + wx * scale, py = cy - wy * scale;
+        if (px < -50 || px > W + 50 || py < -50 || py > H + 50) {
+          _particles[i] = _randParticle(); continue;
+        }
+        drawParticle(wx, wy, pAlpha, true);
+      } else {
+        p.phase += p.speed * dt;
+        var rr = Math.exp(p.x0 + tReal);
+        var rPx = rr * scale;
+        if (rPx < 3 || rPx > Math.max(W, H) * 1.3) {
+          _particles[i] = _randParticle(); continue;
+        }
+        var ang = p.phase + tImag;
+        drawParticle(rr * Math.cos(ang), rr * Math.sin(ang), pAlpha, false);
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+}());
+</script>
+</body>
+</html>

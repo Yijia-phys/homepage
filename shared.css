@@ -3,6 +3,18 @@
    Each page still defines its own layout & positioning overrides.
 */
 
+/* ── Design tokens (single source of truth) ── */
+:root {
+  --accent: #d4724f;
+  --glass:  rgba(10, 8, 6, 0.30);
+  --border: rgba(255,255,255,0.09);
+  --text:   rgba(255,255,255,0.92);
+  --muted:  rgba(255,255,255,0.50);
+  --radius: 14px;
+  --blur:   14px;
+  --ui-opacity: 1;
+}
+
 /* ── Glass card ── */
 .glass {
   background: var(--glass);
@@ -129,3 +141,21 @@ input[type=range]::-webkit-slider-thumb {
   background:rgba(212,114,79,.18); color:var(--accent);
   border-color:rgba(212,114,79,.4);
 }
+
+/* ── Timezone autocomplete ── */
+.tz-wrap { position: relative; }
+.tz-suggest {
+  position: absolute; left: 0; right: 0; top: 100%; margin-top: 3px;
+  background: rgba(14,10,8,.98); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; z-index: 200;
+  display: none; flex-direction: column; max-height: 148px; overflow-y: auto;
+}
+.tz-suggest.open { display: flex; }
+.tz-suggest-item {
+  font-family: 'JetBrains Mono', monospace; font-size: .62rem;
+  letter-spacing: .04em; padding: .42rem .65rem;
+  color: var(--muted); cursor: pointer; white-space: nowrap;
+  transition: background .1s, color .1s;
+}
+.tz-suggest-item:hover,
+.tz-suggest-item.active { background: rgba(212,114,79,.18); color: var(--accent); }
