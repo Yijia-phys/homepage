@@ -30,6 +30,41 @@
 
   var _bg, _bgNext, _userWps, _currentWp;
 
+  // ── IndexedDB helpers for wallpaper blobs ──────────────────────────
+  var _idb = null;
+  var _IDB_NAME  = 'yijialog-wp';
+  var _IDB_STORE = 'wallpapers';
+
+  function _openIDB(cb) {
+    if (_idb) { cb(_idb); return; }
+    var req = indexedDB.open(_IDB_NAME, 1);
+    req.onupgradeneeded = function (e) {
+      e.target.result.createObjectStore(_IDB_STORE, { keyPath: 'id' });
+    };
+    req.onsuccess = function (e) { _idb = e.target.result; cb(_idb); };
+    req.onerror   = function ()  { cb(null); };
+  }
+  function _idbGetAll(cb) {
+    _openIDB(function (db) {
+      if (!db) { cb([]); return; }
+      var req = db.transaction(_IDB_STORE, 'readonly').objectStore(_IDB_STORE).getAll();
+      req.onsuccess = function (e) { cb(e.target.result || []); };
+      req.onerror   = function ()  { cb([]); };
+    });
+  }
+  function _idbPut(item) {
+    _openIDB(function (db) {
+      if (!db) return;
+      db.transaction(_IDB_STORE, 'readwrite').objectStore(_IDB_STORE).put(item);
+    });
+  }
+  function _idbDelete(id) {
+    _openIDB(function (db) {
+      if (!db) return;
+      db.transaction(_IDB_STORE, 'readwrite').objectStore(_IDB_STORE).delete(id);
+    });
+  }
+
   function _allWps() {
     return PRESETS.map(function (p, i) { return Object.assign({}, p, { id: 'preset-' + i }); })
       .concat(_userWps.map(function (u) { return { id: u.id, type: 'image', src: u.dataUrl }; }));
@@ -64,7 +99,7 @@
   function _deleteUserWp(id, e) {
     e.stopPropagation();
     _userWps = _userWps.filter(function (u) { return u.id !== id; });
-    save('user-wps', _userWps);
+    _idbDelete(id);
     if (_currentWp === id) _switchWallpaper('preset-3');
     _refreshThumbs();
   }
@@ -97,9 +132,16 @@
   function initWallpaper() {
     _bg        = document.getElementById('bg');
     _bgNext    = document.getElementById('bg-next');
-    _userWps   = load('user-wps', []);
+    _userWps   = [];
     _currentWp = load('current-wp', 'preset-3');
 
+    // Apply preset wallpaper immediately (no async needed)
+    var allPresets = PRESETS.map(function (p, i) { return Object.assign({}, p, { id: 'preset-' + i }); });
+    var presetWp = allPresets.find(function (w) { return w.id === _currentWp; });
+    if (presetWp) _applyWpToEl(_bg, presetWp);
+    _refreshThumbs(); // render preset thumbs right away
+
+    // Set up file upload
     var fi = document.getElementById('file-input');
     if (fi) {
       fi.addEventListener('change', function (e) {
@@ -107,18 +149,11 @@
         var reader = new FileReader();
         reader.onload = function (ev) {
           var id = 'user-' + Date.now();
-          _userWps.push({ id: id, dataUrl: ev.target.result });
-          if (_userWps.length > 5) _userWps = _userWps.slice(-5);
-          // Quota-safe save: if storage is full, drop oldest until it fits
-          var saved = false;
-          while (_userWps.length > 0 && !saved) {
-            try {
-              localStorage.setItem('user-wps', JSON.stringify(_userWps));
-              saved = true;
-            } catch (e) {
-              _userWps.shift(); // drop oldest and retry
-            }
-          }
+          var item = { id: id, dataUrl: ev.target.result };
+          // Cap at 5 user wallpapers; drop oldest from IDB if needed
+          if (_userWps.length >= 5) { _idbDelete(_userWps.shift().id); }
+          _userWps.push(item);
+          _idbPut(item);
           _refreshThumbs();
           _switchWallpaper(id);
         };
@@ -127,10 +162,34 @@
       });
     }
 
-    var wp = _allWps().find(function (w) { return w.id === _currentWp; }) || _allWps()[3];
-    _applyWpToEl(_bg, wp);
-    _currentWp = wp.id;
-    _refreshThumbs();
+    // Load user wallpapers from IndexedDB (async)
+    _idbGetAll(function (wps) {
+      if (wps && wps.length > 0) {
+        _userWps = wps;
+      } else {
+        // One-time migration from localStorage → IDB
+        var legacy = load('user-wps', []);
+        if (legacy.length > 0) {
+          _userWps = legacy;
+          legacy.forEach(function (wp) { _idbPut(wp); });
+          try { localStorage.removeItem('user-wps'); } catch (err) {}
+        }
+      }
+      _refreshThumbs(); // re-render with user thumbs
+      // Apply user image wallpaper now that IDB is loaded
+      if (_currentWp.indexOf('user-') === 0) {
+        var userWp = _userWps.find(function (w) { return w.id === _currentWp; });
+        if (userWp) {
+          _applyWpToEl(_bg, { type: 'image', src: userWp.dataUrl });
+        } else {
+          // Image no longer in IDB, fall back to default preset
+          _currentWp = 'preset-3';
+          save('current-wp', _currentWp);
+          _applyWpToEl(_bg, allPresets[3]);
+          _refreshThumbs();
+        }
+      }
+    });
   }
 
   // ── Display sliders ────────────────────────────────────────────────
@@ -477,20 +536,107 @@
   function initWaves() { initAnimation(); }
 
   // ── Shared CSS injection ───────────────────────────────────────────
+  // shared.css is now loaded via a static <link> tag in each page's <head>.
+  // This stub is kept for backwards compatibility only.
+  function injectStyles() {}
+
+
+  // ── Timezone autocomplete ──────────────────────────────────────────
+  // Common IANA timezones — substring match (case-insensitive)
+  var _TZ_LIST = [
+    'Africa/Cairo','Africa/Johannesburg','Africa/Lagos','Africa/Nairobi',
+    'America/Argentina/Buenos_Aires','America/Bogota','America/Chicago',
+    'America/Denver','America/Los_Angeles','America/Mexico_City',
+    'America/New_York','America/Sao_Paulo','America/Toronto','America/Vancouver',
+    'Asia/Bangkok','Asia/Colombo','Asia/Dubai','Asia/Ho_Chi_Minh',
+    'Asia/Hong_Kong','Asia/Jakarta','Asia/Karachi','Asia/Kolkata',
+    'Asia/Kuala_Lumpur','Asia/Manila','Asia/Riyadh','Asia/Seoul',
+    'Asia/Shanghai','Asia/Singapore','Asia/Taipei','Asia/Tehran',
+    'Asia/Tokyo','Asia/Vladivostok','Asia/Yangon','Australia/Adelaide',
+    'Australia/Brisbane','Australia/Melbourne','Australia/Perth','Australia/Sydney',
+    'Europe/Amsterdam','Europe/Athens','Europe/Berlin','Europe/Brussels',
+    'Europe/Budapest','Europe/Dublin','Europe/Helsinki','Europe/Istanbul',
+    'Europe/Lisbon','Europe/London','Europe/Madrid','Europe/Moscow',
+    'Europe/Oslo','Europe/Paris','Europe/Prague','Europe/Rome',
+    'Europe/Stockholm','Europe/Vienna','Europe/Warsaw','Europe/Zurich',
+    'Pacific/Auckland','Pacific/Fiji','Pacific/Honolulu','Pacific/Midway',
+    'UTC',
+  ];
+
   /**
-   * injectStyles()
-   * Injects all shared visual CSS once into <head>.
-   * Each page still defines its own layout & positioning overrides.
-   * Call before any other SharedUI init so the styles exist when elements render.
+   * initTzAutocomplete(inputId)
+   * Wraps the given tz-input in a relative-positioned div and shows
+   * a substring-match dropdown as the user types.
+   * The input must already exist in the DOM when this is called.
    */
-  function injectStyles() {
-    // Inject shared.css via <link> for proper DevTools source mapping
-    if (document.querySelector('link[data-shared-css]')) return;
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'shared.css';
-    link.setAttribute('data-shared-css', '1');
-    document.head.appendChild(link);
+  function initTzAutocomplete(inputId) {
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+
+    // Wrap input so dropdown can be positioned relative to it
+    var wrap = document.createElement('div');
+    wrap.className = 'tz-wrap';
+    inp.parentNode.insertBefore(wrap, inp);
+    wrap.appendChild(inp);
+
+    var drop = document.createElement('div');
+    drop.className = 'tz-suggest';
+    wrap.appendChild(drop);
+
+    var _activeIdx = -1;
+
+    function _hide() {
+      drop.classList.remove('open');
+      drop.innerHTML = '';
+      _activeIdx = -1;
+    }
+
+    function _show(q) {
+      var q2 = q.toLowerCase().replace(/[/_\s-]/g, '');
+      var matches = _TZ_LIST.filter(function (tz) {
+        return tz.toLowerCase().replace(/[/_\s-]/g, '').indexOf(q2) !== -1;
+      }).slice(0, 8);
+
+      if (!matches.length || !q) { _hide(); return; }
+
+      drop.innerHTML = '';
+      _activeIdx = -1;
+      matches.forEach(function (tz, i) {
+        var item = document.createElement('div');
+        item.className = 'tz-suggest-item';
+        item.textContent = tz;
+        item.addEventListener('mousedown', function (e) {
+          e.preventDefault(); // keep focus on input
+          inp.value = tz;
+          _hide();
+        });
+        drop.appendChild(item);
+      });
+      drop.classList.add('open');
+    }
+
+    inp.addEventListener('input', function () { _show(this.value); });
+    inp.addEventListener('blur', function () { setTimeout(_hide, 150); });
+    inp.addEventListener('focus', function () { if (this.value) _show(this.value); });
+
+    inp.addEventListener('keydown', function (e) {
+      var items = drop.querySelectorAll('.tz-suggest-item');
+      if (!drop.classList.contains('open') || !items.length) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        _activeIdx = Math.min(_activeIdx + 1, items.length - 1);
+        items.forEach(function (el, i) { el.classList.toggle('active', i === _activeIdx); });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        _activeIdx = Math.max(_activeIdx - 1, 0);
+        items.forEach(function (el, i) { el.classList.toggle('active', i === _activeIdx); });
+      } else if (e.key === 'Enter' && _activeIdx >= 0) {
+        inp.value = items[_activeIdx].textContent;
+        _hide();
+      } else if (e.key === 'Escape') {
+        _hide();
+      }
+    });
   }
 
   // ── Public API ─────────────────────────────────────────────────────
@@ -501,6 +647,7 @@
     initWallpaper: initWallpaper,
     initDisplay:   initDisplay,
     initSettings:  initSettings,
+    initTzAutocomplete: initTzAutocomplete,
     initWaves:        initWaves,
     initAnimation:    initAnimation,
     setAnimationMode: function(mode) {
