@@ -5,7 +5,16 @@
     "lat": 41.80,
     "type": "current",
     "photo": "/assets/photos/shenyang20240806.jpg",
-    "desc": "The vibrant capital of Liaoning, perfectly blends Imperial history with industrial pride. My hometown.",
+    "desc": "My hometown — a down‑to‑earth mix of imperial history and industrial pride.",
     "meta": "2007 - present"
+  },
+  {
+    "name": "Bristol",
+    "lon": -2.5879,
+    "lat": 51.4545,
+    "type": "<em>now</em>",
+    "photo": "/assets/photos/bristol.jpg",
+    "desc": "A creative, relaxed city where Banksy’s art and maritime past hang out together.",
+    "meta": "Future"
   }
 ]
