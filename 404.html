@@ -46,13 +46,18 @@ html, body {
   font-weight: 400; line-height: 1; letter-spacing: -.03em;
   color: var(--text);
 }
-.num em {
+.num {
   font-family: 'Playfair Display', serif;
-  font-style: normal; font-weight: 400;
-  font-size: 1em; letter-spacing: -.03em;
+  font-size: clamp(5rem, 14vw, 9rem);
+  font-weight: 400; line-height: 1; letter-spacing: -.03em;
   color: var(--accent);
-  vertical-align: 0;
+
+  display: inline-flex;
+  align-items: baseline;
 }
+
+.num::before { content: "4"; color: var(--text); }
+.num::after  { content: "4"; color: var(--text); }
 
 .divider {
   width: 2.6rem; height: 1px;
@@ -103,7 +108,7 @@ html, body {
 
 <div class="page">
   <div class="main-card glass">
-    <div class="num">4<em>0</em>4</div>
+    <div class="num">0</div>
     <div class="divider"></div>
     <div class="msg-main">the page you sought does not exist</div>
     <div class="msg-sub">lost in the image of e<sup>z</sup></div>
