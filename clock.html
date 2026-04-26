@@ -624,8 +624,9 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
   <div class="ps-stat-btns">
     <div class="ps-stat-btn export" onclick="exportStats()">Export JSON</div>
-    <div class="ps-stat-btn danger" onclick="clearStats()">Clear</div>
+    <div class="ps-stat-btn" onclick="importStats()">Import JSON</div>
   </div>
+  <input type="file" id="stats-file-input" accept=".json" style="display:none">
   <button class="ps-close" id="ps-close-btn">Close &#x2715;</button>
 </div>
 
@@ -1050,11 +1051,33 @@ function exportStats() {
   a.click();
   URL.revokeObjectURL(a.href);
 }
-function clearStats() {
-  if (!confirm('Clear all pomodoro statistics? This cannot be undone.')) return;
-  SharedUI.save('pomo-stats', []);
-  renderStats();
+function importStats() {
+  el('stats-file-input').click();
 }
+(function(){
+  el('stats-file-input').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var imported = JSON.parse(ev.target.result);
+        if (!Array.isArray(imported)) throw new Error();
+        var existing = SharedUI.load('pomo-stats', []);
+        var keys = new Set(existing.map(function(s){ return s.completedAt; }));
+        var fresh = imported.filter(function(s){ return s.date && s.duration && s.completedAt && !keys.has(s.completedAt); });
+        if (fresh.length === 0) { alert('No new sessions to import (all already exist).'); return; }
+        SharedUI.save('pomo-stats', existing.concat(fresh));
+        renderStats();
+        alert('Imported ' + fresh.length + ' new session(s).');
+      } catch (err) {
+        alert('Invalid JSON file. Expected an array of session objects.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+})();
 function renderDots(cid,cls){var e=el(cid);e.innerHTML='';for(var i=0;i<cfg.count;i++){var d=document.createElement('div');d.className=cls+(i<state.completed?' done':'');e.appendChild(d);}}
 function drawRing(){
   var cv=el('ring-canvas'),ctx=cv.getContext('2d'),S=280;
