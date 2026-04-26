@@ -485,6 +485,27 @@ body.immersive-mode #controls { display:none !important; }
 #music-playlist::-webkit-scrollbar-thumb { background:rgba(212,114,79,.35); border-radius:3px; }
 #music-playlist::-webkit-scrollbar-thumb:hover { background:rgba(212,114,79,.6); }
 #music-playlist.open { display:flex; }
+
+/* ── Pomo stats ── */
+.ps-stat-line {
+  display:flex; justify-content:space-between; align-items:center;
+  font-family:'JetBrains Mono',monospace; font-size:.62rem;
+  letter-spacing:.04em; color:var(--muted);
+}
+.ps-stat-val { color:var(--accent); font-weight:400; }
+.ps-stat-btns { display:flex; gap:.4rem; }
+.ps-stat-btn {
+  flex:1; padding:.36rem .5rem; border-radius:7px; text-align:center;
+  background:rgba(255,255,255,.06); border:1px solid var(--border);
+  color:var(--muted); font-family:'JetBrains Mono',monospace;
+  font-size:.58rem; letter-spacing:.05em; text-transform:uppercase;
+  cursor:pointer; transition:background .15s,color .15s,border-color .15s;
+}
+.ps-stat-btn:hover { background:rgba(255,255,255,.12); color:var(--text); }
+.ps-stat-btn.export { border-color:rgba(212,114,79,.3); color:var(--accent); }
+.ps-stat-btn.export:hover { background:rgba(212,114,79,.2); }
+.ps-stat-btn.danger { color:rgba(220,60,60,.65); }
+.ps-stat-btn.danger:hover { background:rgba(220,60,60,.15); border-color:rgba(220,60,60,.4); color:#f88; }
 body.immersive-mode #music-playlist {
   left:auto; right:0; bottom:72px;
   width:260px; max-height:calc(100vh - 72px); border-radius:0;
@@ -598,8 +619,16 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   <div class="ps-row"><div class="ps-label">Focus duration <span id="lbl-focus">25 min</span></div><input type="range" id="sl-focus" min="5" max="90" step="5" value="25"></div>
   <div class="ps-row"><div class="ps-label">Break duration <span id="lbl-break">5 min</span></div><input type="range" id="sl-break" min="1" max="30" step="1" value="5"></div>
   <div class="ps-row"><div class="ps-label">Pomodoros <span id="lbl-count">4</span></div><input type="range" id="sl-count" min="1" max="12" step="1" value="4"></div>
+  <div class="ps-title">Statistics</div>
+  <div class="ps-stat-line">Today <span class="ps-stat-val" id="stat-today">0 pomos · 0 min</span></div>
+  <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
+  <div class="ps-stat-btns">
+    <div class="ps-stat-btn export" onclick="exportStats()">Export JSON</div>
+    <div class="ps-stat-btn danger" onclick="clearStats()">Clear</div>
+  </div>
   <button class="ps-close" id="ps-close-btn">Close &#x2715;</button>
 </div>
+
 
 <!-- Music settings panel -->
 <div id="music-settings-panel" class="glass">
@@ -823,6 +852,7 @@ function openPomoSettings(e) {
   if(ps.classList.contains('open')){ps.classList.remove('open');return;}
   el('main-settings').classList.remove('open');
   ps.classList.add('open');
+  renderStats();
 }
 el('ps-close-btn').onclick=function(){el('pomo-settings').classList.remove('open');};
 document.addEventListener('click',function(e){
@@ -960,7 +990,7 @@ function togglePlay() {
 function tick() {
   state.secsLeft--;
   if(state.secsLeft<=0){
-    if(state.phase==='focus'){state.completed=Math.min(state.completed+1,cfg.count);playFocusDone();if(state.completed>=cfg.count){clearInterval(ticker);state.running=false;state.secsLeft=0;renderAll();return;}state.phase='break';state.secsLeft=cfg.brk*60;}
+    if(state.phase==='focus'){state.completed=Math.min(state.completed+1,cfg.count);recordSession(cfg.focus);playFocusDone();if(state.completed>=cfg.count){clearInterval(ticker);state.running=false;state.secsLeft=0;renderAll();return;}state.phase='break';state.secsLeft=cfg.brk*60;}
     else{playBreakDone();state.phase='focus';state.secsLeft=cfg.focus*60;}
   }
   renderAll();
@@ -984,6 +1014,46 @@ function renderAll(){
   ipb.innerHTML = state.running
     ? '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/></svg>'
     : '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.804 8 5 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/></svg>';
+}
+// ── Pomo statistics ──────────────────────────────────────────────────
+function recordSession(durMin) {
+  var now = new Date();
+  var entry = { date: now.toISOString().slice(0,10), duration: durMin, completedAt: now.toISOString() };
+  var stats = SharedUI.load('pomo-stats', []);
+  stats.push(entry);
+  SharedUI.save('pomo-stats', stats);
+  renderStats();
+}
+function getStats() {
+  var stats = SharedUI.load('pomo-stats', []);
+  var today = new Date().toISOString().slice(0,10);
+  var todaySessions = stats.filter(function(s){ return s.date === today; });
+  return {
+    todayCount: todaySessions.length,
+    todayMin:   todaySessions.reduce(function(sum,s){ return sum+s.duration; },0),
+    totalCount: stats.length,
+    totalMin:   stats.reduce(function(sum,s){ return sum+s.duration; },0),
+    sessions:   stats
+  };
+}
+function renderStats() {
+  var s = getStats();
+  var tdy = el('stat-today'); if (tdy) tdy.textContent = s.todayCount + ' pomos · ' + s.todayMin + ' min';
+  var ttl = el('stat-total'); if (ttl) ttl.textContent = s.totalCount + ' pomos · ' + s.totalMin + ' min';
+}
+function exportStats() {
+  var s = getStats();
+  var blob = new Blob([JSON.stringify(s.sessions, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pomo-stats-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function clearStats() {
+  if (!confirm('Clear all pomodoro statistics? This cannot be undone.')) return;
+  SharedUI.save('pomo-stats', []);
+  renderStats();
 }
 function renderDots(cid,cls){var e=el(cid);e.innerHTML='';for(var i=0;i<cfg.count;i++){var d=document.createElement('div');d.className=cls+(i<state.completed?' done':'');e.appendChild(d);}}
 function drawRing(){
