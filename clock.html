@@ -999,13 +999,21 @@ function playBreakDone() {
 var cfg={focus:SharedUI.load('pomo-focus',25),brk:SharedUI.load('pomo-break',5),count:SharedUI.load('pomo-count',4)};
 var state={phase:'focus',secsLeft:cfg.focus*60,completed:0,running:false,expanded:true};
 var ticker=null;
+var _timerStart=null;   // Date.now() when current phase started
+var _timerTotal=cfg.focus*60;  // total seconds for current phase
 el('sl-focus').value=cfg.focus;
 el('sl-break').value=cfg.brk;
 el('sl-count').value=cfg.count;
-el('sl-focus').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>180)v=180;this.value=v;cfg.focus=v;SharedUI.save('pomo-focus',v);if(state.phase==='focus'&&!state.running){state.secsLeft=v*60;renderAll();}};
-el('sl-break').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>60)v=60;this.value=v;cfg.brk=v;SharedUI.save('pomo-break',v);if(state.phase==='break'&&!state.running){state.secsLeft=v*60;renderAll();}};
+el('sl-focus').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>180)v=180;this.value=v;cfg.focus=v;SharedUI.save('pomo-focus',v);if(state.phase==='focus'&&!state.running){_timerTotal=v*60;state.secsLeft=_timerTotal;renderAll();}};
+el('sl-break').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>60)v=60;this.value=v;cfg.brk=v;SharedUI.save('pomo-break',v);if(state.phase==='break'&&!state.running){_timerTotal=v*60;state.secsLeft=_timerTotal;renderAll();}};
 el('sl-count').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>12)v=12;this.value=v;cfg.count=v;SharedUI.save('pomo-count',v);renderAll();};
 
+function _syncSecs() {
+  if (_timerStart !== null) {
+    var elapsed = Math.floor((Date.now() - _timerStart) / 1000);
+    state.secsLeft = Math.max(0, _timerTotal - elapsed);
+  }
+}
 function toggleView() { state.expanded=!state.expanded; applyView(); }
 function applyView() {
   var immersive = music.mode==='immersive';
@@ -1024,18 +1032,28 @@ function applyView() {
 function togglePlay() {
   if (!state.expanded) { state.expanded=true; applyView(); }
   state.running=!state.running;
-  if(state.running){ticker=setInterval(tick,1000);}else{clearInterval(ticker);}
-  renderAll();
-}
-function tick() {
-  state.secsLeft--;
-  if(state.secsLeft<=0){
-    if(state.phase==='focus'){state.completed=Math.min(state.completed+1,cfg.count);recordSession(cfg.focus);playFocusDone();sendNotify('Focus Complete!','Session finished. Time for a break!');if(state.completed>=cfg.count){clearInterval(ticker);state.running=false;state.secsLeft=0;renderAll();return;}state.phase='break';state.secsLeft=cfg.brk*60;}
-    else{playBreakDone();sendNotify('Break Over!','Break finished. Ready to focus!');state.phase='focus';state.secsLeft=cfg.focus*60;}
+  if(state.running){
+    _timerTotal=(state.phase==='focus'?cfg.focus:cfg.brk)*60;
+    _timerStart=Date.now()-(_timerTotal-state.secsLeft)*1000;
+    ticker=setInterval(tick,250);
+  }else{
+    _syncSecs();
+    clearInterval(ticker);
+    _timerStart=null;
   }
   renderAll();
 }
-function resetTimer(){clearInterval(ticker);state.running=false;state.phase='focus';state.secsLeft=cfg.focus*60;state.completed=0;renderAll();}
+function tick() {
+  _syncSecs();
+  if(state.secsLeft<=0){
+    if(state.phase==='focus'){state.completed=Math.min(state.completed+1,cfg.count);recordSession(cfg.focus);playFocusDone();sendNotify('Focus Complete!','Session finished. Time for a break!');if(state.completed>=cfg.count){clearInterval(ticker);state.running=false;state.secsLeft=0;_timerStart=null;renderAll();return;}state.phase='break';_timerTotal=cfg.brk*60;}
+    else{playBreakDone();sendNotify('Break Over!','Break finished. Ready to focus!');state.phase='focus';_timerTotal=cfg.focus*60;}
+    state.secsLeft=_timerTotal;
+    _timerStart=Date.now();
+  }
+  renderAll();
+}
+function resetTimer(){clearInterval(ticker);state.running=false;state.phase='focus';_timerTotal=cfg.focus*60;state.secsLeft=_timerTotal;_timerStart=null;state.completed=0;renderAll();}
 function renderAll(){
   var timeStr=fmt(state.secsLeft),modeStr=state.phase==='focus'?'Focus':'Break';
   var playTxt=state.running?'Pause':(state.secsLeft===cfg.focus*60?'Start':'Resume');
