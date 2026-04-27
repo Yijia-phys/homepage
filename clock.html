@@ -486,6 +486,14 @@ body.immersive-mode #controls { display:none !important; }
 #music-playlist::-webkit-scrollbar-thumb:hover { background:rgba(212,114,79,.6); }
 #music-playlist.open { display:flex; }
 
+/* ── Pomo number inputs: hide browser spinners ── */
+.ps-row input[type=number]::-webkit-inner-spin-button,
+.ps-row input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+.ps-row input[type=number] {
+  -moz-appearance: textfield;
+}
 /* ── Pomo stats ── */
 .ps-stat-line {
   display:flex; justify-content:space-between; align-items:center;
@@ -616,9 +624,9 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 <!-- Pomo settings panel -->
 <div id="pomo-settings" class="glass">
   <div class="ps-title">Pomodoro Settings</div>
-  <div class="ps-row"><div class="ps-label">Focus duration <span id="lbl-focus">25 min</span></div><input type="range" id="sl-focus" min="5" max="90" step="5" value="25"></div>
-  <div class="ps-row"><div class="ps-label">Break duration <span id="lbl-break">5 min</span></div><input type="range" id="sl-break" min="1" max="30" step="1" value="5"></div>
-  <div class="ps-row"><div class="ps-label">Pomodoros <span id="lbl-count">4</span></div><input type="range" id="sl-count" min="1" max="12" step="1" value="4"></div>
+  <div class="ps-row"><div class="ps-label">Focus duration (min)</div><input type="number" id="sl-focus" min="1" max="180" value="25" class="tz-input"></div>
+  <div class="ps-row"><div class="ps-label">Break duration (min)</div><input type="number" id="sl-break" min="1" max="60" value="5" class="tz-input"></div>
+  <div class="ps-row"><div class="ps-label">Pomodoros</div><input type="number" id="sl-count" min="1" max="12" value="4" class="tz-input"></div>
   <div class="ps-title">Statistics</div>
   <div class="ps-stat-line">Today <span class="ps-stat-val" id="stat-today">0 pomos · 0 min</span></div>
   <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
@@ -991,12 +999,12 @@ function playBreakDone() {
 var cfg={focus:SharedUI.load('pomo-focus',25),brk:SharedUI.load('pomo-break',5),count:SharedUI.load('pomo-count',4)};
 var state={phase:'focus',secsLeft:cfg.focus*60,completed:0,running:false,expanded:true};
 var ticker=null;
-el('sl-focus').value=cfg.focus; el('lbl-focus').textContent=cfg.focus+' min';
-el('sl-break').value=cfg.brk;   el('lbl-break').textContent=cfg.brk+' min';
-el('sl-count').value=cfg.count; el('lbl-count').textContent=cfg.count;
-el('sl-focus').oninput=function(){cfg.focus=+this.value;el('lbl-focus').textContent=this.value+' min';SharedUI.save('pomo-focus',cfg.focus);if(state.phase==='focus'&&!state.running){state.secsLeft=cfg.focus*60;renderAll();}};
-el('sl-break').oninput=function(){cfg.brk=+this.value;el('lbl-break').textContent=this.value+' min';SharedUI.save('pomo-break',cfg.brk);if(state.phase==='break'&&!state.running){state.secsLeft=cfg.brk*60;renderAll();}};
-el('sl-count').oninput=function(){cfg.count=+this.value;el('lbl-count').textContent=this.value;SharedUI.save('pomo-count',cfg.count);renderAll();};
+el('sl-focus').value=cfg.focus;
+el('sl-break').value=cfg.brk;
+el('sl-count').value=cfg.count;
+el('sl-focus').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>180)v=180;this.value=v;cfg.focus=v;SharedUI.save('pomo-focus',v);if(state.phase==='focus'&&!state.running){state.secsLeft=v*60;renderAll();}};
+el('sl-break').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>60)v=60;this.value=v;cfg.brk=v;SharedUI.save('pomo-break',v);if(state.phase==='break'&&!state.running){state.secsLeft=v*60;renderAll();}};
+el('sl-count').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>12)v=12;this.value=v;cfg.count=v;SharedUI.save('pomo-count',v);renderAll();};
 
 function toggleView() { state.expanded=!state.expanded; applyView(); }
 function applyView() {
