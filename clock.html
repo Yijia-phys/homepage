@@ -627,6 +627,11 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
     <div class="ps-stat-btn" onclick="importStats()">Import JSON</div>
   </div>
   <input type="file" id="stats-file-input" accept=".json" style="display:none">
+  <div class="ps-title">Notifications</div>
+  <div class="music-toggle-row">
+    <span>Desktop alerts</span>
+    <div class="toggle-switch" id="toggle-notify" onclick="toggleNotify()"></div>
+  </div>
   <button class="ps-close" id="ps-close-btn">Close &#x2715;</button>
 </div>
 
@@ -949,11 +954,37 @@ function setEQ(preset) {
 
 function playFocusDone() {
   _duckMusic(1800);
-  var ctx=_getAudioCtx();[0,0.38].forEach(function(d){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(440,ctx.currentTime+d);o.frequency.exponentialRampToValueAtTime(330,ctx.currentTime+d+0.35);g.gain.setValueAtTime(0,ctx.currentTime+d);g.gain.linearRampToValueAtTime(0.38,ctx.currentTime+d+0.03);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.7);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.75);});
+  var ctx=_getAudioCtx();
+  // Ascending major chord arpeggio — C5 → E5 → G5, rich & triumphant
+  var notes=[523.25,659.25,783.99];
+  notes.forEach(function(freq,i){
+    var o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type='sine';
+    o.frequency.value=freq;
+    var t=ctx.currentTime+i*0.16;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.4,t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.65);
+    o.start(t);o.stop(t+0.7);
+  });
 }
 function playBreakDone() {
   _duckMusic(1600);
-  var ctx=_getAudioCtx();[0,0.22,0.44].forEach(function(d,i){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='triangle';o.frequency.setValueAtTime([660,784,988][i],ctx.currentTime+d);g.gain.setValueAtTime(0,ctx.currentTime+d);g.gain.linearRampToValueAtTime(0.28,ctx.currentTime+d+0.02);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.55);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.6);});
+  var ctx=_getAudioCtx();
+  // Gentle two-tone chime — A4 → C#5, doorbell-like
+  var notes=[440,554.37];
+  notes.forEach(function(freq,i){
+    var o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type='triangle';
+    o.frequency.value=freq;
+    var t=ctx.currentTime+i*0.28;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.32,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.65);
+    o.start(t);o.stop(t+0.7);
+  });
 }
 
 // ── Pomodoro ─────────────────────────────────────────────────────────
@@ -991,8 +1022,8 @@ function togglePlay() {
 function tick() {
   state.secsLeft--;
   if(state.secsLeft<=0){
-    if(state.phase==='focus'){state.completed=Math.min(state.completed+1,cfg.count);recordSession(cfg.focus);playFocusDone();if(state.completed>=cfg.count){clearInterval(ticker);state.running=false;state.secsLeft=0;renderAll();return;}state.phase='break';state.secsLeft=cfg.brk*60;}
-    else{playBreakDone();state.phase='focus';state.secsLeft=cfg.focus*60;}
+    if(state.phase==='focus'){state.completed=Math.min(state.completed+1,cfg.count);recordSession(cfg.focus);playFocusDone();sendNotify('Focus Complete!','Session finished. Time for a break!');if(state.completed>=cfg.count){clearInterval(ticker);state.running=false;state.secsLeft=0;renderAll();return;}state.phase='break';state.secsLeft=cfg.brk*60;}
+    else{playBreakDone();sendNotify('Break Over!','Break finished. Ready to focus!');state.phase='focus';state.secsLeft=cfg.focus*60;}
   }
   renderAll();
 }
@@ -1603,6 +1634,38 @@ applyView();
 setMusicMode(music.mode);
 updateLoopBtns();
 el('toggle-lyrics').classList.toggle('on', music.showLyrics);
+// ── Init notification toggle ──
+(function(){
+  var on = SharedUI.load('pomo-notify', false);
+  if (on && 'Notification' in window && Notification.permission === 'granted') {
+    el('toggle-notify').classList.add('on');
+  } else if (!on) {
+    // reset if previously saved but permission lost
+    SharedUI.save('pomo-notify', false);
+  }
+})();
+// ── Notification helpers ──
+function toggleNotify() {
+  if (!('Notification' in window)) { alert('Notifications not supported in this browser.'); return; }
+  if (Notification.permission === 'denied') { alert('Notifications are blocked. Please enable in browser settings.'); return; }
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(function(perm){
+      if (perm === 'granted') {
+        SharedUI.save('pomo-notify', true);
+        el('toggle-notify').classList.add('on');
+        sendNotify('Notifications On','You will be alerted when sessions end.');
+      }
+    });
+    return;
+  }
+  var cur = el('toggle-notify').classList.toggle('on');
+  SharedUI.save('pomo-notify', cur);
+}
+function sendNotify(title, body) {
+  var on = SharedUI.load('pomo-notify', false);
+  if (!on || !('Notification' in window) || Notification.permission !== 'granted') return;
+  try { new Notification(title, { body: body, icon: '/assets/favicon.svg' }); } catch(e) {}
+}
 </script>
 </body>
 </html>
