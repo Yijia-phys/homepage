@@ -36,10 +36,17 @@
 - Settings panel includes Timezone section, consistent with index.html
 
 **clock.html — Focus Timer**
-- Pomodoro engine with customizable focus/break durations and session count
+- Pomodoro engine with customizable focus/break durations and session count — all three settings are direct number inputs (1–180 / 1–60 / 1–12), no sliders
 - Collapsed pill (top-center) and expanded ring with progress arc
-- Sound alerts via Web Audio API on session end — no external files needed
+- Sound alerts via Web Audio API — focus complete plays an ascending C5→E5→G5 arpeggio, break ends with a two-tone A4→C#5 chime
+- Desktop notifications — optional toggle in settings; pushes OS-level alerts when a session ends
 - Keyboard: `Space` start/pause · `R` reset
+
+**clock.html — Statistics**
+- Every completed focus session is logged to `localStorage` (`pomo-stats`) with date, duration, and timestamp
+- Today / Total counts and minutes displayed in the pomodoro settings panel
+- Export JSON — downloads `pomo-stats-YYYY-MM-DD.json`
+- Import JSON — merges with existing data, deduplicates by `completedAt` timestamp
 
 **clock.html — Music Player**
 
@@ -117,6 +124,8 @@ SharedUI.load(key, default)
 | `pomo-focus` | number | Focus duration (minutes) |
 | `pomo-break` | number | Break duration (minutes) |
 | `pomo-count` | number | Pomodoro session count |
+| `pomo-stats` | JSON | Array of completed sessions (date, duration, completedAt) |
+| `pomo-notify` | bool | Desktop notification toggle on/off |
 | `music-mode` | string | `off` / `minimal` / `player` / `immersive` |
 | `music-vol` | number | Volume (0–1) |
 | `music-loop` | string | `sequence` / `single` / `shuffle` |
@@ -172,10 +181,17 @@ MIT — do whatever you want with it.
 - 设置面板新增时区区块，与 index.html 保持一致
 
 **clock.html — 番茄钟**
-- 可自定义专注/休息时长和组数的番茄钟引擎
+- 可自定义专注/休息时长和组数的番茄钟引擎 — 三项设置均为数字输入框（1–180 / 1–60 / 1–12），不再使用滑块
 - 折叠胶囊（顶部居中）和展开环形进度两种视图
-- 通过 Web Audio API 合成提示音，无需外部音频文件
+- 通过 Web Audio API 合成提示音 — 专注完成播放上行 C5→E5→G5 琶音，休息结束播放 A4→C#5 双音门铃
+- 桌面通知 — 设置面板内可选开关，任务结束推送系统级弹窗提醒
 - 键盘快捷键：`Space` 开始/暂停 · `R` 重置
+
+**clock.html — 统计系统**
+- 每次完成专注自动记录到 `localStorage`（`pomo-stats`），含日期、时长和时间戳
+- 在番茄钟设置面板显示今日/总计完成数和分钟数
+- 导出 JSON — 下载 `pomo-stats-YYYY-MM-DD.json`
+- 导入 JSON — 与现有数据合并，按 `completedAt` 时间戳去重
 
 **clock.html — 音乐播放器**
 
@@ -253,6 +269,8 @@ SharedUI.load(key, default)
 | `pomo-focus` | number | 专注时长（分钟） |
 | `pomo-break` | number | 休息时长（分钟） |
 | `pomo-count` | number | 番茄钟组数 |
+| `pomo-stats` | JSON | 已完成任务数组（含 date、duration、completedAt） |
+| `pomo-notify` | bool | 桌面通知开关 |
 | `music-mode` | string | `off` / `minimal` / `player` / `immersive` |
 | `music-vol` | number | 音量（0–1） |
 | `music-loop` | string | `sequence` / `single` / `shuffle` |
