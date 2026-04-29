@@ -549,11 +549,23 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   cursor: not-allowed;
 }
 /* ── Daily Plan panel ── */
+/* ── Daily Plan backdrop ── */
+#daily-plan-backdrop {
+  position: fixed; inset: 0; z-index: 110;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  opacity: var(--ui-opacity); transition: opacity .3s;
+}
+#daily-plan-backdrop.show { display: block; }
+
+/* ── Daily Plan panel (centered modal) ── */
 #daily-plan-panel {
-  position: fixed; bottom: 4.6rem; right: 1.8rem; z-index: 100;
-  width: 310px; padding: 1.1rem 1.2rem;
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 111;
+  width: min(640px, 90vw); max-height: 80vh;
+  padding: 1.4rem 1.5rem;
   display: none; flex-direction: column; gap: .9rem;
-  max-height: 75vh; overflow-y: auto;
+  overflow-y: auto;
 }
 #daily-plan-panel.open { display: flex; }
 
@@ -673,6 +685,7 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 </div>
 
 <!-- Daily Plan panel -->
+<div id="daily-plan-backdrop" onclick="closeDailyPlan()"></div>
 <div id="daily-plan-panel" class="glass">
   <div id="daily-plan-overlay" class="daily-plan-overlay">
     <span>Please enable Daily Plan Mode &gt;_&lt;</span>
@@ -914,7 +927,7 @@ function openPomoSettings(e) {
   ps.classList.add('open');
 }
 el('ps-close-btn').onclick=function(){el('pomo-settings').classList.remove('open');};
-el('dp-close-btn').onclick=function(){el('daily-plan-panel').classList.remove('open');};
+el('dp-close-btn').onclick=function(){closeDailyPlan();};
 document.addEventListener('click',function(e){
   var ps=el('pomo-settings');
   if(ps.classList.contains('open')&&!ps.contains(e.target)&&!e.target.closest('#pill')&&!e.target.closest('#ring-btn')) ps.classList.remove('open');
@@ -1201,6 +1214,7 @@ document.addEventListener('keydown',function(e){
   // Pomo
   if(e.code==='Space'){e.preventDefault();togglePlay();}
   if(e.code==='KeyR'){e.preventDefault();resetTimer();}
+  if(e.code==='Escape'){closeDailyPlan();}
   // Music  q=prev  w=play/pause  e=next  a=cycle mode
   if(e.code==='KeyQ'){e.preventDefault();musicPrev();}
   if(e.code==='KeyW'){e.preventDefault();musicTogglePlay();}
@@ -1744,12 +1758,17 @@ function disablePomoInputs(disabled) {
 }
 function openDailyPlan() {
   var dp = el('daily-plan-panel');
-  if (dp.classList.contains('open')) { dp.classList.remove('open'); return; }
+  if (dp.classList.contains('open')) { closeDailyPlan(); return; }
   el('main-settings').classList.remove('open');
   el('pomo-settings').classList.remove('open');
+  el('daily-plan-backdrop').classList.add('show');
   dp.classList.add('open');
   renderStats();
   renderDailyPlanOverlay();
+}
+function closeDailyPlan() {
+  el('daily-plan-panel').classList.remove('open');
+  el('daily-plan-backdrop').classList.remove('show');
 }
 function renderDailyPlanOverlay() {
   var overlay = el('daily-plan-overlay');
