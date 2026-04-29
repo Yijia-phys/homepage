@@ -583,8 +583,6 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 .daily-plan-overlay.show { display: flex; }
 
 /* ── Daily Plan v2 ───────────────────────────────────────────────────── */
-#daily-plan-panel { position: relative; gap: .75rem; }
-
 .dp-header {
   display: flex; align-items: center; justify-content: space-between;
 }
@@ -892,7 +890,7 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
     <div class="ps-title" style="border:none;padding:0;margin:0;">Daily Plan</div>
     <div class="dp-toggle-wrap">
       <span class="dp-toggle-label" id="dp-tl-label">Timeline</span>
-      <div class="toggle-switch" id="toggle-timeline"></div>
+      <div class="toggle-switch" id="toggle-timeline" onclick="dpToggleTimeline()"></div>
     </div>
   </div>
 
@@ -915,7 +913,7 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   <div class="dp-plan-area" id="dp-plan-area"></div>
 
   <!-- Add button (wired up in Step 2) -->
-  <div class="dp-add-btn" id="dp-add-btn">
+  <div class="dp-add-btn" id="dp-add-btn" onclick="dpAddPomo()">
     <span class="dp-add-icon">+</span>
     <span>Add Pomodoro</span>
   </div>
@@ -1294,6 +1292,13 @@ var cfg={focus:SharedUI.load('pomo-focus',25),brk:SharedUI.load('pomo-break',5),
 var state={phase:'focus',secsLeft:cfg.focus*60,completed:0,running:false,expanded:true};
 var ticker=null;
 var planMode = SharedUI.load('plan-mode', false);
+// ── Daily Plan data ──
+var plan = SharedUI.load('pomo-plan', []);
+var planTL = false;
+var _dpIdCtr = plan.length ? Math.max.apply(null, plan.map(function(p){return p.id||0;})) : 0;
+var _dpColorPopup = null;
+var DP_COLORS = ['#d4724f','#5b9bd5','#6dbf8a','#e8c14a','#a97fcc','#e06868'];
+var DP_COLOR_NAMES = ['Terracotta','Cornflower','Sage','Amber','Lavender','Coral'];
 var _timerStart=null;   // Date.now() when current phase started
 var _timerTotal=cfg.focus*60;  // total seconds for current phase
 el('sl-focus').value=cfg.focus;
@@ -2018,6 +2023,316 @@ function renderDailyPlanOverlay() {
 function aboutDailyPlan() {
   window.open('', '_blank');
 }
+
+// ── Daily Plan v2 functions ─────────────────────────────────────────────────
+
+function dpDefaults() {
+  var f = parseInt((el('dp-def-focus')||{}).value, 10);
+  var b = parseInt((el('dp-def-break')||{}).value, 10);
+  return { f: (isNaN(f)||f<1)?25:f, b: (isNaN(b)||b<1)?5:b };
+}
+
+function dpSave() {
+  SharedUI.save('pomo-plan', plan);
+}
+
+function dpCalcEnd(startStr, focusMin, brkMin) {
+  var parts = (startStr||'00:00').split(':');
+  var h = parseInt(parts[0],10)||0, m = parseInt(parts[1],10)||0;
+  var total = h*60 + m + focusMin + brkMin;
+  var eh = Math.floor(total/60)%24, em = total%60;
+  return String(eh).padStart(2,'0')+':'+String(em).padStart(2,'0');
+}
+
+function dpToMins(timeStr) {
+  var parts = (timeStr||'00:00').split(':');
+  return (parseInt(parts[0],10)||0)*60 + (parseInt(parts[1],10)||0);
+}
+
+function dpHasOverlap(idx) {
+  var cur = plan[idx];
+  var cs = dpToMins(cur.startTime), ce = cs + cur.focus + cur.brk;
+  for (var i=0; i<plan.length; i++) {
+    if (i===idx) continue;
+    var oth = plan[i];
+    var os = dpToMins(oth.startTime), oe = os + oth.focus + oth.brk;
+    if (cs < oe && ce > os) return oth.title || ('Pomodoro '+(i+1));
+  }
+  return null;
+}
+
+function dpNextStart() {
+  if (!plan.length) return '09:00';
+  var prev = plan[plan.length-1];
+  return dpCalcEnd(prev.startTime, prev.focus, prev.brk);
+}
+
+function dpAddPomo() {
+  var d = dpDefaults();
+  plan.push({
+    id: ++_dpIdCtr,
+    title: '',
+    color: DP_COLORS[0],
+    focus: d.f,
+    brk: d.b,
+    focusLinked: true,
+    breakLinked: true,
+    startTime: dpNextStart()
+  });
+  dpSave();
+  dpRender();
+}
+
+function dpDelPomo(id) {
+  plan = plan.filter(function(p){ return p.id !== id; });
+  dpSave();
+  dpRender();
+}
+
+function dpMoveUp(id) {
+  var i = plan.findIndex(function(p){ return p.id===id; });
+  if (i > 0) { var t=plan[i]; plan[i]=plan[i-1]; plan[i-1]=t; }
+  dpSave();
+  dpRender();
+}
+
+function dpMoveDown(id) {
+  var i = plan.findIndex(function(p){ return p.id===id; });
+  if (i < plan.length-1) { var t=plan[i]; plan[i]=plan[i+1]; plan[i+1]=t; }
+  dpSave();
+  dpRender();
+}
+
+function dpShowColorPicker(id, dotEl) {
+  if (_dpColorPopup) { _dpColorPopup.remove(); _dpColorPopup = null; }
+  var p = plan.find(function(x){ return x.id===id; });
+  if (!p) return;
+  var popup = document.createElement('div');
+  popup.className = 'dp-color-popup';
+  DP_COLORS.forEach(function(c, ci) {
+    var sw = document.createElement('div');
+    sw.className = 'dp-swatch' + (p.color===c ? ' dp-sel' : '');
+    sw.style.background = c;
+    sw.title = DP_COLOR_NAMES[ci];
+    sw.onclick = function(e) {
+      e.stopPropagation();
+      p.color = c;
+      popup.remove(); _dpColorPopup = null;
+      dpSave(); dpRender();
+    };
+    popup.appendChild(sw);
+  });
+  // position relative to the card
+  var card = dotEl.closest('.dp-card');
+  card.style.position = 'relative';
+  card.appendChild(popup);
+  _dpColorPopup = popup;
+  setTimeout(function(){
+    document.addEventListener('click', function h(){
+      if (_dpColorPopup) { _dpColorPopup.remove(); _dpColorPopup = null; }
+      document.removeEventListener('click', h);
+    }, {once: true});
+  }, 10);
+}
+
+function dpMakeDurRow(p) {
+  var row = document.createElement('div');
+  row.className = 'dp-dur-row';
+
+  var fl = document.createElement('span'); fl.textContent = 'Focus';
+  var fi = document.createElement('input');
+  fi.className = 'dp-dur-input'; fi.type = 'number'; fi.min=1; fi.max=180; fi.value = p.focus;
+  fi.oninput = function(){
+    p.focus = Math.max(1, parseInt(fi.value,10)||1);
+    p.focusLinked = false;
+    dpSave();
+  };
+  var fu = document.createElement('span'); fu.className = 'dp-def-unit'; fu.textContent = 'min';
+
+  var sep = document.createElement('span'); sep.className = 'dp-dur-sep'; sep.textContent = '·';
+
+  var bl = document.createElement('span'); bl.textContent = 'Break';
+  var bi = document.createElement('input');
+  bi.className = 'dp-dur-input'; bi.type = 'number'; bi.min=1; bi.max=60; bi.value = p.brk;
+  bi.oninput = function(){
+    p.brk = Math.max(1, parseInt(bi.value,10)||1);
+    p.breakLinked = false;
+    dpSave();
+  };
+  var bu = document.createElement('span'); bu.className = 'dp-def-unit'; bu.textContent = 'min';
+
+  row.appendChild(fl); row.appendChild(fi); row.appendChild(fu);
+  row.appendChild(sep);
+  row.appendChild(bl); row.appendChild(bi); row.appendChild(bu);
+  return row;
+}
+
+function dpMakeColorDot(p) {
+  var dot = document.createElement('div');
+  dot.className = 'dp-color-dot';
+  dot.style.background = p.color;
+  dot.onclick = function(e){ e.stopPropagation(); dpShowColorPicker(p.id, dot); };
+  return dot;
+}
+
+function dpMakeTitleInput(p, idx) {
+  var ti = document.createElement('input');
+  ti.className = 'dp-title-input'; ti.type = 'text'; ti.maxLength = 20;
+  ti.placeholder = 'Pomodoro ' + (idx+1);
+  ti.value = p.title;
+  ti.oninput = function(){ p.title = ti.value; dpSave(); };
+  return ti;
+}
+
+function dpMakeDelBtn(p) {
+  var btn = document.createElement('div');
+  btn.className = 'dp-del-btn'; btn.textContent = '×';
+  btn.onclick = function(){ dpDelPomo(p.id); };
+  return btn;
+}
+
+function dpMakeNormalCard(p, idx) {
+  var card = document.createElement('div');
+  card.className = 'dp-card';
+
+  // Top row: ▲▼ · color dot · title · ×
+  var topRow = document.createElement('div');
+  topRow.className = 'dp-card-row';
+
+  var orderBtns = document.createElement('div');
+  orderBtns.className = 'dp-order-btns';
+  var upBtn = document.createElement('div'); upBtn.className = 'dp-ord-btn'; upBtn.textContent = '▲';
+  upBtn.onclick = function(){ dpMoveUp(p.id); };
+  var dnBtn = document.createElement('div'); dnBtn.className = 'dp-ord-btn'; dnBtn.textContent = '▼';
+  dnBtn.onclick = function(){ dpMoveDown(p.id); };
+  orderBtns.appendChild(upBtn); orderBtns.appendChild(dnBtn);
+
+  topRow.appendChild(orderBtns);
+  topRow.appendChild(dpMakeColorDot(p));
+  topRow.appendChild(dpMakeTitleInput(p, idx));
+  topRow.appendChild(dpMakeDelBtn(p));
+
+  card.appendChild(topRow);
+  card.appendChild(dpMakeDurRow(p));
+  return card;
+}
+
+function dpMakeTlCard(p, idx) {
+  var overlap = dpHasOverlap(idx);
+  var card = document.createElement('div');
+  card.className = 'dp-card' + (overlap ? ' dp-overlap' : '');
+
+  // Top row: [24h] [HH:MM] · color dot · title · ×
+  var topRow = document.createElement('div');
+  topRow.className = 'dp-tl-top';
+
+  var badge = document.createElement('span');
+  badge.className = 'dp-time-badge'; badge.textContent = '24h';
+
+  var si = document.createElement('input');
+  si.className = 'dp-start-input'; si.type = 'text'; si.maxLength = 5;
+  si.placeholder = '09:00'; si.value = p.startTime || '09:00';
+  si.oninput = function(){
+    p.startTime = si.value;
+    var valid = /^([01]?\d|2[0-3]):([0-5]\d)$/.test(si.value);
+    si.classList.toggle('dp-time-err', !valid);
+    dpSave(); dpRender();
+  };
+
+  topRow.appendChild(badge);
+  topRow.appendChild(si);
+  topRow.appendChild(dpMakeColorDot(p));
+  topRow.appendChild(dpMakeTitleInput(p, idx));
+  topRow.appendChild(dpMakeDelBtn(p));
+
+  // Mid row: start→end times · progress bar
+  var midRow = document.createElement('div');
+  midRow.className = 'dp-tl-mid';
+
+  var times = document.createElement('div');
+  times.className = 'dp-tl-times';
+  var ts = document.createElement('div'); ts.className = 'dp-tl-start'; ts.textContent = p.startTime || '09:00';
+  var te = document.createElement('div'); te.className = 'dp-tl-end';
+  te.textContent = '→ ' + dpCalcEnd(p.startTime, p.focus, p.brk);
+  times.appendChild(ts); times.appendChild(te);
+
+  var barWrap = document.createElement('div');
+  barWrap.className = 'dp-tl-bar-wrap';
+  var bar = document.createElement('div'); bar.className = 'dp-tl-bar';
+  var total = p.focus + p.brk || 1;
+  var focusFill = document.createElement('div'); focusFill.className = 'dp-tl-bar-focus';
+  focusFill.style.width = Math.round(p.focus/total*100)+'%';
+  focusFill.style.background = p.color;
+  var brkFill = document.createElement('div'); brkFill.className = 'dp-tl-bar-break';
+  bar.appendChild(focusFill); bar.appendChild(brkFill);
+
+  var name = document.createElement('div'); name.className = 'dp-tl-name';
+  name.textContent = p.title || ('Pomodoro '+(idx+1));
+
+  barWrap.appendChild(bar); barWrap.appendChild(name);
+  midRow.appendChild(times); midRow.appendChild(barWrap);
+
+  // Dur row (no left-padding offset in TL mode)
+  var durRow = dpMakeDurRow(p);
+  durRow.style.paddingLeft = '0';
+
+  card.appendChild(topRow);
+  card.appendChild(midRow);
+  card.appendChild(durRow);
+
+  // Overlap warning
+  if (overlap) {
+    var warn = document.createElement('div');
+    warn.className = 'dp-overlap-warn';
+    warn.innerHTML = '<span>⚠</span> Overlaps with "' + overlap + '"';
+    card.appendChild(warn);
+  }
+
+  return card;
+}
+
+function dpRender() {
+  var area = el('dp-plan-area');
+  if (!area) return;
+
+  // Sync linked cards with current defaults
+  var d = dpDefaults();
+  plan.forEach(function(p){
+    if (p.focusLinked) p.focus = d.f;
+    if (p.breakLinked) p.brk = d.b;
+  });
+
+  // Timeline: sort by startTime
+  if (planTL) {
+    plan.sort(function(a,b){ return dpToMins(a.startTime) - dpToMins(b.startTime); });
+  }
+
+  area.innerHTML = '';
+  plan.forEach(function(p, idx){
+    var card = planTL ? dpMakeTlCard(p, idx) : dpMakeNormalCard(p, idx);
+    area.appendChild(card);
+  });
+}
+
+function dpToggleTimeline() {
+  planTL = !planTL;
+  var lbl = el('dp-tl-label');
+  if (lbl) {
+    lbl.textContent = planTL ? 'Timeline ON' : 'Timeline';
+    lbl.classList.toggle('tl-on', planTL);
+  }
+  el('toggle-timeline').classList.toggle('on', planTL);
+  dpRender();
+}
+
+// ── Daily Plan init ──
+(function dpInit(){
+  var defFocus = el('dp-def-focus');
+  var defBreak = el('dp-def-break');
+  if (defFocus) defFocus.oninput = dpRender;
+  if (defBreak) defBreak.oninput = dpRender;
+  dpRender();
+})();
 function toggleNotify() {
   if (!('Notification' in window)) { alert('Notifications not supported in this browser.'); return; }
   if (Notification.permission === 'denied') { alert('Notifications are blocked. Please enable in browser settings.'); return; }
