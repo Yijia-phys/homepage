@@ -1968,10 +1968,14 @@ el('toggle-lyrics').classList.toggle('on', music.showLyrics);
 })();
 // ── Init plan mode toggle ──
 (function(){
+  // Normalize to boolean: localStorage may return string "false" (truthy) instead of false
+  planMode = (planMode === true || planMode === 'true');
   if (planMode) {
     el('toggle-plan-mode').classList.add('on');
     disablePomoInputs(true);
   }
+  // Pre-set overlay so it's correct on the very first panel open
+  renderDailyPlanOverlay();
 })();
 // ── Notification helpers ──
 // ── Daily Plan mode ──
