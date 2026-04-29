@@ -1747,7 +1747,7 @@ function togglePlanMode() {
   SharedUI.save('plan-mode', planMode);
   el('toggle-plan-mode').classList.toggle('on', planMode);
   disablePomoInputs(planMode);
-  if (!planMode && el('daily-plan-panel').classList.contains('open')) {
+  if (el('daily-plan-panel').classList.contains('open')) {
     renderDailyPlanOverlay();
   }
 }
