@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -541,6 +541,34 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   opacity:.7;
 }
 .playlist-item.active .playlist-item-dur { color:var(--accent); opacity:.8; }
+
+/* ── Disabled inputs (plan mode ON) ── */
+.tz-input:disabled {
+  color: var(--muted);
+  border-color: rgba(255,255,255,.05);
+  cursor: not-allowed;
+}
+/* ── Daily Plan panel ── */
+#daily-plan-panel {
+  position: fixed; bottom: 4.6rem; right: 1.8rem; z-index: 100;
+  width: 310px; padding: 1.1rem 1.2rem;
+  display: none; flex-direction: column; gap: .9rem;
+  max-height: 75vh; overflow-y: auto;
+}
+#daily-plan-panel.open { display: flex; }
+
+/* ── Overlay when plan mode is OFF ── */
+.daily-plan-overlay {
+  position: absolute; inset: 0; z-index: 5;
+  background: rgba(10, 8, 6, 0.82);
+  border-radius: var(--radius);
+  display: none;
+  align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem; color: var(--muted);
+  letter-spacing: .04em;
+}
+.daily-plan-overlay.show { display: flex; }
 </style>
 </head>
 <body>
@@ -627,6 +655,29 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   <div class="ps-row"><div class="ps-label">Focus duration (min)</div><input type="number" id="sl-focus" min="1" max="180" value="25" class="tz-input"></div>
   <div class="ps-row"><div class="ps-label">Break duration (min)</div><input type="number" id="sl-break" min="1" max="60" value="5" class="tz-input"></div>
   <div class="ps-row"><div class="ps-label">Pomodoros</div><input type="number" id="sl-count" min="1" max="12" value="4" class="tz-input"></div>
+  <div class="ps-title">Daily Plan</div>
+  <div class="music-toggle-row">
+    <span>Enable Daily Plan Mode</span>
+    <div class="toggle-switch" id="toggle-plan-mode" onclick="togglePlanMode()"></div>
+  </div>
+  <div class="ps-stat-btns">
+    <div class="ps-stat-btn" onclick="openDailyPlan()">Open Daily Plan</div>
+    <div class="ps-stat-btn" onclick="aboutDailyPlan()">About Daily Plan</div>
+  </div>
+  <div class="ps-title">Notifications</div>
+  <div class="music-toggle-row">
+    <span>Desktop alerts</span>
+    <div class="toggle-switch" id="toggle-notify" onclick="toggleNotify()"></div>
+  </div>
+  <button class="ps-close" id="ps-close-btn">Close &#x2715;</button>
+</div>
+
+<!-- Daily Plan panel -->
+<div id="daily-plan-panel" class="glass">
+  <div id="daily-plan-overlay" class="daily-plan-overlay">
+    <span>Please enable Daily Plan Mode &gt;_&lt;</span>
+  </div>
+  <div class="ps-title">Daily Plan</div>
   <div class="ps-title">Statistics</div>
   <div class="ps-stat-line">Today <span class="ps-stat-val" id="stat-today">0 pomos · 0 min</span></div>
   <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
@@ -635,12 +686,7 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
     <div class="ps-stat-btn" onclick="importStats()">Import JSON</div>
   </div>
   <input type="file" id="stats-file-input" accept=".json" style="display:none">
-  <div class="ps-title">Notifications</div>
-  <div class="music-toggle-row">
-    <span>Desktop alerts</span>
-    <div class="toggle-switch" id="toggle-notify" onclick="toggleNotify()"></div>
-  </div>
-  <button class="ps-close" id="ps-close-btn">Close &#x2715;</button>
+  <button class="ps-close" id="dp-close-btn">Close &#x2715;</button>
 </div>
 
 
@@ -866,12 +912,14 @@ function openPomoSettings(e) {
   if(ps.classList.contains('open')){ps.classList.remove('open');return;}
   el('main-settings').classList.remove('open');
   ps.classList.add('open');
-  renderStats();
 }
 el('ps-close-btn').onclick=function(){el('pomo-settings').classList.remove('open');};
+el('dp-close-btn').onclick=function(){el('daily-plan-panel').classList.remove('open');};
 document.addEventListener('click',function(e){
   var ps=el('pomo-settings');
   if(ps.classList.contains('open')&&!ps.contains(e.target)&&!e.target.closest('#pill')&&!e.target.closest('#ring-btn')) ps.classList.remove('open');
+  var dp=el('daily-plan-panel');
+  if(dp.classList.contains('open')&&!dp.contains(e.target)&&!e.target.closest('#pomo-settings')) dp.classList.remove('open');
   var ms=el('music-settings-panel');
   if(ms.classList.contains('open')&&!ms.contains(e.target)&&!e.target.closest('#music-settings-btn')) ms.classList.remove('open');
 });
@@ -999,14 +1047,15 @@ function playBreakDone() {
 var cfg={focus:SharedUI.load('pomo-focus',25),brk:SharedUI.load('pomo-break',5),count:SharedUI.load('pomo-count',4)};
 var state={phase:'focus',secsLeft:cfg.focus*60,completed:0,running:false,expanded:true};
 var ticker=null;
+var planMode = SharedUI.load('plan-mode', false);
 var _timerStart=null;   // Date.now() when current phase started
 var _timerTotal=cfg.focus*60;  // total seconds for current phase
 el('sl-focus').value=cfg.focus;
 el('sl-break').value=cfg.brk;
 el('sl-count').value=cfg.count;
-el('sl-focus').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>180)v=180;this.value=v;cfg.focus=v;SharedUI.save('pomo-focus',v);if(state.phase==='focus'&&!state.running){_timerTotal=v*60;state.secsLeft=_timerTotal;renderAll();}};
-el('sl-break').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>60)v=60;this.value=v;cfg.brk=v;SharedUI.save('pomo-break',v);if(state.phase==='break'&&!state.running){_timerTotal=v*60;state.secsLeft=_timerTotal;renderAll();}};
-el('sl-count').onchange=function(){var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>12)v=12;this.value=v;cfg.count=v;SharedUI.save('pomo-count',v);renderAll();};
+el('sl-focus').onchange=function(){if(planMode){this.value=cfg.focus;return;}var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>180)v=180;this.value=v;cfg.focus=v;SharedUI.save('pomo-focus',v);if(state.phase==='focus'&&!state.running){_timerTotal=v*60;state.secsLeft=_timerTotal;renderAll();}};
+el('sl-break').onchange=function(){if(planMode){this.value=cfg.brk;return;}var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>60)v=60;this.value=v;cfg.brk=v;SharedUI.save('pomo-break',v);if(state.phase==='break'&&!state.running){_timerTotal=v*60;state.secsLeft=_timerTotal;renderAll();}};
+el('sl-count').onchange=function(){if(planMode){this.value=cfg.count;return;}var v=parseInt(this.value,10);if(isNaN(v)||v<1)v=1;if(v>12)v=12;this.value=v;cfg.count=v;SharedUI.save('pomo-count',v);renderAll();};
 
 function _syncSecs() {
   if (_timerStart !== null) {
@@ -1670,7 +1719,49 @@ el('toggle-lyrics').classList.toggle('on', music.showLyrics);
     SharedUI.save('pomo-notify', false);
   }
 })();
+// ── Init plan mode toggle ──
+(function(){
+  if (planMode) {
+    el('toggle-plan-mode').classList.add('on');
+    disablePomoInputs(true);
+  }
+})();
 // ── Notification helpers ──
+// ── Daily Plan mode ──
+function togglePlanMode() {
+  planMode = !planMode;
+  SharedUI.save('plan-mode', planMode);
+  el('toggle-plan-mode').classList.toggle('on', planMode);
+  disablePomoInputs(planMode);
+  if (!planMode && el('daily-plan-panel').classList.contains('open')) {
+    renderDailyPlanOverlay();
+  }
+}
+function disablePomoInputs(disabled) {
+  el('sl-focus').disabled = disabled;
+  el('sl-break').disabled = disabled;
+  el('sl-count').disabled = disabled;
+}
+function openDailyPlan() {
+  var dp = el('daily-plan-panel');
+  if (dp.classList.contains('open')) { dp.classList.remove('open'); return; }
+  el('main-settings').classList.remove('open');
+  el('pomo-settings').classList.remove('open');
+  dp.classList.add('open');
+  renderStats();
+  renderDailyPlanOverlay();
+}
+function renderDailyPlanOverlay() {
+  var overlay = el('daily-plan-overlay');
+  if (planMode) {
+    overlay.classList.remove('show');
+  } else {
+    overlay.classList.add('show');
+  }
+}
+function aboutDailyPlan() {
+  window.open('', '_blank');
+}
 function toggleNotify() {
   if (!('Notification' in window)) { alert('Notifications not supported in this browser.'); return; }
   if (Notification.permission === 'denied') { alert('Notifications are blocked. Please enable in browser settings.'); return; }
