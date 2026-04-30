@@ -920,10 +920,15 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
     <!-- ③ Pomodoro list -->
     <div class="dp-plan-area" id="dp-plan-area"></div>
 
-    <!-- Add button -->
-    <div class="dp-add-btn" id="dp-add-btn" onclick="dpAddPomo()">
-      <span class="dp-add-icon">+</span>
-      <span>Add Pomodoro</span>
+    <!-- Add / Import row -->
+    <div style="display:flex;gap:.45rem;">
+      <div class="dp-add-btn" id="dp-add-btn" onclick="dpAddPomo()" style="flex:1;">
+        <span class="dp-add-icon">+</span>
+        <span>Add Pomodoro</span>
+      </div>
+      <div class="dp-add-btn" onclick="dpImportYesterday()" style="flex:none;padding:.55rem .75rem;" title="Import yesterday's plan">
+        <span style="font-size:.7rem;">↩ Yesterday</span>
+      </div>
     </div>
 
     <div class="dp-divider"></div>
@@ -1304,9 +1309,11 @@ function playBreakDone() {
 var cfg={focus:SharedUI.load('pomo-focus',25),brk:SharedUI.load('pomo-break',5),count:SharedUI.load('pomo-count',4)};
 var state={phase:'focus',secsLeft:cfg.focus*60,completed:0,running:false,expanded:true};
 var ticker=null;
-var planMode = SharedUI.load('plan-mode', false);
+var planMode = false;  // not persisted — always starts off on page load
 // ── Daily Plan data ──
-var plan = SharedUI.load('pomo-plan', []);
+var _dpToday = (function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+var _dpYesterday = (function(){ var d=new Date(); d.setDate(d.getDate()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+var plan = SharedUI.load('pomo-plan-'+_dpToday, []);
 var planTL = false;
 var _dpIdCtr = plan.length ? Math.max.apply(null, plan.map(function(p){return p.id||0;})) : 0;
 var _dpColorPopup = null;
@@ -1986,20 +1993,13 @@ el('toggle-lyrics').classList.toggle('on', music.showLyrics);
 })();
 // ── Init plan mode toggle ──
 (function(){
-  // Normalize to boolean: localStorage may return string "false" (truthy) instead of false
-  planMode = (planMode === true || planMode === 'true');
-  if (planMode) {
-    el('toggle-plan-mode').classList.add('on');
-    disablePomoInputs(true);
-  }
-  // Pre-set overlay so it's correct on the very first panel open
+  // planMode is always false on load — no normalization needed
   renderDailyPlanOverlay();
 })();
 // ── Notification helpers ──
 // ── Daily Plan mode ──
 function togglePlanMode() {
   planMode = !planMode;
-  SharedUI.save('plan-mode', planMode);
   el('toggle-plan-mode').classList.toggle('on', planMode);
   disablePomoInputs(planMode);
   if (el('daily-plan-panel').classList.contains('open')) {
@@ -2046,7 +2046,7 @@ function dpDefaults() {
 }
 
 function dpSave() {
-  SharedUI.save('pomo-plan', plan);
+  SharedUI.save('pomo-plan-'+_dpToday, plan);
 }
 
 function dpCalcEnd(startStr, focusMin, brkMin) {
@@ -2078,6 +2078,24 @@ function dpNextStart() {
   if (!plan.length) return '09:00';
   var prev = plan[plan.length-1];
   return dpCalcEnd(prev.startTime, prev.focus, prev.brk);
+}
+
+function dpImportYesterday() {
+  var yesterday = SharedUI.load('pomo-plan-'+_dpYesterday, []);
+  if (!yesterday || !yesterday.length) {
+    alert('No plan found for yesterday.');
+    return;
+  }
+  if (plan.length && !confirm('This will replace today\'s current plan. Continue?')) return;
+  // Deep copy, reassign fresh ids so today's list is independent
+  plan = yesterday.map(function(p){
+    return { id: ++_dpIdCtr, title: p.title, color: p.color,
+             focus: p.focus, brk: p.brk,
+             focusLinked: p.focusLinked, breakLinked: p.breakLinked,
+             startTime: p.startTime };
+  });
+  dpSave();
+  dpRender();
 }
 
 function dpAddPomo() {
