@@ -1457,7 +1457,7 @@ function renderAll(){
   // ring-sub: show progress N/M in planMode
   var subLabel;
   if(allDone){ subLabel='great work!'; }
-  else if(state.running){ subLabel=planMode&&plan.length?((planIdx+1)+' / '+plan.length+' · running...'):'running...'; }
+  else if(state.running){ subLabel='running...'; }
   else if(state.secsLeft<(pomo?pomo.focus:cfg.focus)*60&&state.phase==='focus'){ subLabel='paused'; }
   else{ subLabel='click to configure'; }
   el('ring-sub').textContent=subLabel;
@@ -1532,7 +1532,25 @@ function importStats() {
     e.target.value = '';
   });
 })();
-function renderDots(cid,cls){var e=el(cid);e.innerHTML='';var total=planMode&&plan.length?plan.length:cfg.count;for(var i=0;i<total;i++){var d=document.createElement('div');d.className=cls+(i<state.completed?' done':'');e.appendChild(d);}}
+function renderDots(cid,cls){
+  var e=el(cid); e.innerHTML='';
+  var total=planMode&&plan.length?plan.length:cfg.count;
+  for(var i=0;i<total;i++){
+    var d=document.createElement('div');
+    var done=i<state.completed;
+    var isCurrent=planMode&&plan.length&&i===planIdx;
+    d.className=cls+(done?' done':'');
+    if(planMode&&plan.length){
+      var c=plan[i]?plan[i].color:null;
+      if(c){
+        if(done){ d.style.background=c; d.style.borderColor=c; }
+        else if(isCurrent){ d.style.borderColor=c; }
+        else{ d.style.borderColor=c; } // future: color, hollow
+      }
+    }
+    e.appendChild(d);
+  }
+}
 function drawRing(){
   var cv=el('ring-canvas'),ctx=cv.getContext('2d'),S=280;
   cv.width=S;cv.height=S;var cx=S/2,cy=S/2,R=120,lw=6;
