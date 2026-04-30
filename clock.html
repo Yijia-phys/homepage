@@ -778,6 +778,26 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   font-family: 'JetBrains Mono', monospace;
   font-size: .53rem; letter-spacing: .03em; color: rgba(228,152,40,.88);
 }
+/* ── Daily Plan tab bar ── */
+.dp-tab-bar {
+  display: flex; gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  margin-bottom: -.1rem; flex-shrink: 0;
+}
+.dp-tab {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .6rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); padding: .55rem 1rem .5rem;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  user-select: none;
+}
+.dp-tab:hover { color: rgba(255,255,255,.65); }
+.dp-tab.dp-tab-active {
+  color: var(--accent); border-bottom-color: var(--accent);
+}
+.dp-tab-pane { display: none; flex-direction: column; gap: .9rem; }
+.dp-tab-pane.dp-pane-active { display: flex; }
 </style>
 </head>
 <body>
@@ -890,58 +910,69 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
     <span>Please enable Daily Plan Mode &gt;_&lt;</span>
   </div>
 
-  <!-- Scrollable inner wrapper — overflow-y lives here, not on the panel -->
+  <!-- Scrollable inner wrapper -->
   <div id="dp-scroll-inner">
 
-    <!-- ① Header: title + timeline toggle -->
-    <div class="dp-header">
-      <div class="ps-title" style="border:none;padding:0;margin:0;">Daily Plan</div>
-      <div class="dp-toggle-wrap">
-        <span class="dp-toggle-label" id="dp-tl-label">Timeline</span>
-        <div class="toggle-switch" id="toggle-timeline" onclick="dpToggleTimeline()"></div>
+    <!-- Tab bar -->
+    <div class="dp-tab-bar">
+      <div class="dp-tab dp-tab-active" id="dp-tab-plan" onclick="dpSwitchTab('plan')">Plan</div>
+      <div class="dp-tab" id="dp-tab-stats" onclick="dpSwitchTab('stats')">Statistics</div>
+    </div>
+
+    <!-- ── Pane: Plan ── -->
+    <div class="dp-tab-pane dp-pane-active" id="dp-pane-plan">
+
+      <!-- Header: title + timeline toggle -->
+      <div class="dp-header">
+        <div class="dp-toggle-wrap">
+          <span class="dp-toggle-label" id="dp-tl-label">Timeline</span>
+          <div class="toggle-switch" id="toggle-timeline" onclick="dpToggleTimeline()"></div>
+        </div>
       </div>
-    </div>
 
-    <!-- ② Defaults row -->
-    <div class="dp-defaults-row">
-      <span>Defaults</span>
-      <span class="dp-def-sep">·</span>
-      <span>Focus</span>
-      <input class="dp-def-input" id="dp-def-focus" type="number" value="25" min="1" max="180">
-      <span class="dp-def-unit">min</span>
-      <span class="dp-def-sep">·</span>
-      <span>Break</span>
-      <input class="dp-def-input" id="dp-def-break" type="number" value="5" min="1" max="60">
-      <span class="dp-def-unit">min</span>
-    </div>
-
-    <div class="dp-divider"></div>
-
-    <!-- ③ Pomodoro list -->
-    <div class="dp-plan-area" id="dp-plan-area"></div>
-
-    <!-- Add / Import row -->
-    <div style="display:flex;gap:.45rem;">
-      <div class="dp-add-btn" id="dp-add-btn" onclick="dpAddPomo()" style="flex:1;">
-        <span class="dp-add-icon">+</span>
-        <span>Add Pomodoro</span>
+      <!-- Defaults row -->
+      <div class="dp-defaults-row">
+        <span>Defaults</span>
+        <span class="dp-def-sep">·</span>
+        <span>Focus</span>
+        <input class="dp-def-input" id="dp-def-focus" type="number" value="25" min="1" max="180">
+        <span class="dp-def-unit">min</span>
+        <span class="dp-def-sep">·</span>
+        <span>Break</span>
+        <input class="dp-def-input" id="dp-def-break" type="number" value="5" min="1" max="60">
+        <span class="dp-def-unit">min</span>
       </div>
-      <div class="dp-add-btn" onclick="dpImportYesterday()" style="flex:none;padding:.55rem .75rem;" title="Import yesterday's plan">
-        <span style="font-size:.7rem;">↩ Yesterday</span>
+
+      <div class="dp-divider"></div>
+
+      <!-- Pomodoro list -->
+      <div class="dp-plan-area" id="dp-plan-area"></div>
+
+      <!-- Add / Import row -->
+      <div style="display:flex;gap:.45rem;">
+        <div class="dp-add-btn" id="dp-add-btn" onclick="dpAddPomo()" style="flex:1;">
+          <span class="dp-add-icon">+</span>
+          <span>Add Pomodoro</span>
+        </div>
+        <div class="dp-add-btn" onclick="dpImportYesterday()" style="flex:none;padding:.55rem .75rem;" title="Import yesterday's plan">
+          <span style="font-size:.7rem;">↩ Yesterday</span>
+        </div>
       </div>
-    </div>
 
-    <div class="dp-divider"></div>
+    </div><!-- /dp-pane-plan -->
 
-    <!-- Statistics (IDs kept intact for renderStats()) -->
-    <div class="ps-title">Statistics</div>
-    <div class="ps-stat-line">Today <span class="ps-stat-val" id="stat-today">0 pomos · 0 min</span></div>
-    <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
-    <div class="ps-stat-btns">
-      <div class="ps-stat-btn export" onclick="exportStats()">Export JSON</div>
-      <div class="ps-stat-btn" onclick="importStats()">Import JSON</div>
-    </div>
-    <input type="file" id="stats-file-input" accept=".json" style="display:none">
+    <!-- ── Pane: Statistics ── -->
+    <div class="dp-tab-pane" id="dp-pane-stats">
+
+      <div class="ps-stat-line">Today <span class="ps-stat-val" id="stat-today">0 pomos · 0 min</span></div>
+      <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
+      <div class="ps-stat-btns">
+        <div class="ps-stat-btn export" onclick="exportStats()">Export JSON</div>
+        <div class="ps-stat-btn" onclick="importStats()">Import JSON</div>
+      </div>
+      <input type="file" id="stats-file-input" accept=".json" style="display:none">
+
+    </div><!-- /dp-pane-stats -->
 
     <button class="ps-close" id="dp-close-btn">Close &#x2715;</button>
 
@@ -2345,6 +2376,14 @@ function dpRender() {
     var card = planTL ? dpMakeTlCard(p, idx) : dpMakeNormalCard(p, idx);
     area.appendChild(card);
   });
+}
+
+function dpSwitchTab(tab) {
+  ['plan','stats'].forEach(function(t){
+    el('dp-tab-'+t).classList.toggle('dp-tab-active', t===tab);
+    el('dp-pane-'+t).classList.toggle('dp-pane-active', t===tab);
+  });
+  if (tab==='stats') renderStats();
 }
 
 function dpToggleTimeline() {
