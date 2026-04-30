@@ -2126,6 +2126,7 @@ function openDailyPlan() {
   el('pomo-settings').classList.remove('open');
   el('daily-plan-backdrop').classList.add('show');
   dp.classList.add('open');
+  dpRender();
   renderStats();
   renderDailyPlanOverlay();
 }
@@ -2476,6 +2477,10 @@ function dpToggleTimeline() {
 
 // ── Daily Plan init ──
 (function dpInit(){
+  // Clean up stale keys from older versions
+  ['plan-mode', 'pomo-plan', 'daily-plan-data'].forEach(function(k){
+    localStorage.removeItem(k);
+  });
   // Restore persisted defaults
   var savedDef = SharedUI.load('pomo-plan-defaults', {f:25, b:5});
   var defFocus = el('dp-def-focus');
@@ -2494,6 +2499,8 @@ function dpToggleTimeline() {
       SharedUI.save('pomo-plan-defaults', { f: parseInt(defFocus.value,10)||25, b: parseInt(defBreak.value,10)||5 });
     };
   }
+  // Write defaults immediately so key always exists in localStorage
+  SharedUI.save('pomo-plan-defaults', { f: parseInt((defFocus||{}).value,10)||25, b: parseInt((defBreak||{}).value,10)||5 });
   dpRender();
 })();
 function toggleNotify() {
