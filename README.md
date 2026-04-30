@@ -42,6 +42,16 @@
 - Desktop notifications — optional toggle in settings; pushes OS-level alerts when a session ends
 - Keyboard: `Space` start/pause · `R` reset
 
+**clock.html — Daily Plan**
+- Plan panel with two tabs: **Plan** and **Statistics**
+- Timeline mode — enter a start time (24-hour), end time auto-calculated, sessions auto-sorted chronologically; overlap warnings shown inline
+- Normal mode — drag-to-reorder sessions with ▲▼ buttons
+- Per-session color coding (6 presets) — reflected on the progress ring and session dots during playback
+- Default focus/break durations with per-session override; unchanged sessions stay linked to the global default
+- Import yesterday's plan with one click
+- Plans stored per-day (`pomo-plan-YYYY-MM-DD`) — today's list persists across refreshes, tomorrow opens clean
+- Plan defaults persisted separately (`pomo-plan-defaults`)
+
 **clock.html — Statistics**
 - Every completed focus session is logged to `localStorage` (`pomo-stats`) with date, duration, and timestamp
 - Today / Total counts and minutes displayed in the pomodoro settings panel
@@ -126,6 +136,8 @@ SharedUI.load(key, default)
 | `pomo-count` | number | Pomodoro session count |
 | `pomo-stats` | JSON | Array of completed sessions (date, duration, completedAt) |
 | `pomo-notify` | bool | Desktop notification toggle on/off |
+| `pomo-plan-YYYY-MM-DD` | JSON | Daily plan sessions array (title, color, focus, brk, startTime…) |
+| `pomo-plan-defaults` | JSON | Default focus/break durations for the plan panel |
 | `music-mode` | string | `off` / `minimal` / `player` / `immersive` |
 | `music-vol` | number | Volume (0–1) |
 | `music-loop` | string | `sequence` / `single` / `shuffle` |
@@ -186,6 +198,16 @@ MIT — do whatever you want with it.
 - 通过 Web Audio API 合成提示音 — 专注完成播放上行 C5→E5→G5 琶音，休息结束播放 A4→C#5 双音门铃
 - 桌面通知 — 设置面板内可选开关，任务结束推送系统级弹窗提醒
 - 键盘快捷键：`Space` 开始/暂停 · `R` 重置
+
+**clock.html — 每日计划**
+- 计划面板分两个标签页：**Plan（计划）** 和 **Statistics（统计）**
+- 时间轴模式 — 输入起始时间（24 小时制），自动计算结束时间，按时间顺序自动排序；重叠时在卡片内显示警告
+- 普通模式 — 通过 ▲▼ 按钮调整番茄钟顺序
+- 每个番茄钟可单独设置颜色（6 种预设）— 运行时反映在进度环和进度点上
+- 全局默认时长 + 单项覆盖；未手动修改的番茄钟始终跟随全局默认值联动
+- 一键导入昨天的计划
+- 计划按日期隔离存储（`pomo-plan-YYYY-MM-DD`）— 当天刷新数据保留，第二天打开为空
+- 面板默认时长单独持久化（`pomo-plan-defaults`）
 
 **clock.html — 统计系统**
 - 每次完成专注自动记录到 `localStorage`（`pomo-stats`），含日期、时长和时间戳
@@ -271,6 +293,8 @@ SharedUI.load(key, default)
 | `pomo-count` | number | 番茄钟组数 |
 | `pomo-stats` | JSON | 已完成任务数组（含 date、duration、completedAt） |
 | `pomo-notify` | bool | 桌面通知开关 |
+| `pomo-plan-YYYY-MM-DD` | JSON | 每日计划数组（含 title、color、focus、brk、startTime 等） |
+| `pomo-plan-defaults` | JSON | 计划面板的默认专注/休息时长 |
 | `music-mode` | string | `off` / `minimal` / `player` / `immersive` |
 | `music-vol` | number | 音量（0–1） |
 | `music-loop` | string | `sequence` / `single` / `shuffle` |
