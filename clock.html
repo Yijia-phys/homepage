@@ -2177,6 +2177,7 @@ function dpMakeDurRow(p) {
     p.focus = Math.max(1, parseInt(fi.value,10)||1);
     p.focusLinked = false;
     dpSave();
+    if (planTL) dpRender(); // timeline: recalc end times + overlap
   };
   var fu = document.createElement('span'); fu.className = 'dp-def-unit'; fu.textContent = 'min';
 
@@ -2189,6 +2190,7 @@ function dpMakeDurRow(p) {
     p.brk = Math.max(1, parseInt(bi.value,10)||1);
     p.breakLinked = false;
     dpSave();
+    if (planTL) dpRender(); // timeline: recalc end times + overlap
   };
   var bu = document.createElement('span'); bu.className = 'dp-def-unit'; bu.textContent = 'min';
 
@@ -2358,10 +2360,24 @@ function dpToggleTimeline() {
 
 // ── Daily Plan init ──
 (function dpInit(){
+  // Restore persisted defaults
+  var savedDef = SharedUI.load('pomo-plan-defaults', {f:25, b:5});
   var defFocus = el('dp-def-focus');
   var defBreak = el('dp-def-break');
-  if (defFocus) defFocus.oninput = dpRender;
-  if (defBreak) defBreak.oninput = dpRender;
+  if (defFocus) {
+    defFocus.value = savedDef.f || 25;
+    defFocus.oninput = function(){
+      dpRender();
+      SharedUI.save('pomo-plan-defaults', { f: parseInt(defFocus.value,10)||25, b: parseInt(defBreak.value,10)||5 });
+    };
+  }
+  if (defBreak) {
+    defBreak.value = savedDef.b || 5;
+    defBreak.oninput = function(){
+      dpRender();
+      SharedUI.save('pomo-plan-defaults', { f: parseInt(defFocus.value,10)||25, b: parseInt(defBreak.value,10)||5 });
+    };
+  }
   dpRender();
 })();
 function toggleNotify() {
