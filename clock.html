@@ -1163,7 +1163,9 @@ document.addEventListener('click',function(e){
   var ps=el('pomo-settings');
   if(ps.classList.contains('open')&&!ps.contains(e.target)&&!e.target.closest('#pill')&&!e.target.closest('#ring-btn')) ps.classList.remove('open');
   var dp=el('daily-plan-panel');
-  if(dp.classList.contains('open')&&!dp.contains(e.target)&&!e.target.closest('#pomo-settings')) dp.classList.remove('open');
+  // e.target.isConnected guards against dpRender() removing the clicked element mid-bubble,
+  // which would make dp.contains(e.target) return false and wrongly close the panel.
+  if(dp.classList.contains('open')&&e.target.isConnected&&!dp.contains(e.target)&&!e.target.closest('#pomo-settings')) closeDailyPlan();
   var ms=el('music-settings-panel');
   if(ms.classList.contains('open')&&!ms.contains(e.target)&&!e.target.closest('#music-settings-btn')) ms.classList.remove('open');
 });
