@@ -563,11 +563,16 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   z-index: 111;
   width: min(640px, 90vw); max-height: 80vh;
-  padding: 1.4rem 1.5rem;
-  display: none; flex-direction: column; gap: .9rem;
-  overflow-y: auto;
+  display: none; flex-direction: column;
+  overflow: hidden;
 }
 #daily-plan-panel.open { display: flex; }
+#dp-scroll-inner {
+  display: flex; flex-direction: column; gap: .9rem;
+  padding: 1.4rem 1.5rem;
+  overflow-y: auto; flex: 1;
+  scrollbar-width: thin; scrollbar-color: rgba(212,114,79,.3) transparent;
+}
 
 /* ── Overlay when plan mode is OFF ── */
 .daily-plan-overlay {
@@ -880,58 +885,64 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 <div id="daily-plan-backdrop" onclick="closeDailyPlan()"></div>
 <div id="daily-plan-panel" class="glass">
 
-  <!-- Overlay: shown when plan mode is OFF (JS-controlled, keep intact) -->
+  <!-- Overlay: position:absolute inset:0 anchors to panel viewport, not scroll content -->
   <div id="daily-plan-overlay" class="daily-plan-overlay">
     <span>Please enable Daily Plan Mode &gt;_&lt;</span>
   </div>
 
-  <!-- ① Header: title + timeline toggle -->
-  <div class="dp-header">
-    <div class="ps-title" style="border:none;padding:0;margin:0;">Daily Plan</div>
-    <div class="dp-toggle-wrap">
-      <span class="dp-toggle-label" id="dp-tl-label">Timeline</span>
-      <div class="toggle-switch" id="toggle-timeline" onclick="dpToggleTimeline()"></div>
+  <!-- Scrollable inner wrapper — overflow-y lives here, not on the panel -->
+  <div id="dp-scroll-inner">
+
+    <!-- ① Header: title + timeline toggle -->
+    <div class="dp-header">
+      <div class="ps-title" style="border:none;padding:0;margin:0;">Daily Plan</div>
+      <div class="dp-toggle-wrap">
+        <span class="dp-toggle-label" id="dp-tl-label">Timeline</span>
+        <div class="toggle-switch" id="toggle-timeline" onclick="dpToggleTimeline()"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- ② Defaults row: focus + break defaults for new pomodoros -->
-  <div class="dp-defaults-row">
-    <span>Defaults</span>
-    <span class="dp-def-sep">·</span>
-    <span>Focus</span>
-    <input class="dp-def-input" id="dp-def-focus" type="number" value="25" min="1" max="180">
-    <span class="dp-def-unit">min</span>
-    <span class="dp-def-sep">·</span>
-    <span>Break</span>
-    <input class="dp-def-input" id="dp-def-break" type="number" value="5" min="1" max="60">
-    <span class="dp-def-unit">min</span>
-  </div>
+    <!-- ② Defaults row -->
+    <div class="dp-defaults-row">
+      <span>Defaults</span>
+      <span class="dp-def-sep">·</span>
+      <span>Focus</span>
+      <input class="dp-def-input" id="dp-def-focus" type="number" value="25" min="1" max="180">
+      <span class="dp-def-unit">min</span>
+      <span class="dp-def-sep">·</span>
+      <span>Break</span>
+      <input class="dp-def-input" id="dp-def-break" type="number" value="5" min="1" max="60">
+      <span class="dp-def-unit">min</span>
+    </div>
 
-  <div class="dp-divider"></div>
+    <div class="dp-divider"></div>
 
-  <!-- ③ Pomodoro list (populated by JS in Step 2) -->
-  <div class="dp-plan-area" id="dp-plan-area"></div>
+    <!-- ③ Pomodoro list -->
+    <div class="dp-plan-area" id="dp-plan-area"></div>
 
-  <!-- Add button (wired up in Step 2) -->
-  <div class="dp-add-btn" id="dp-add-btn" onclick="dpAddPomo()">
-    <span class="dp-add-icon">+</span>
-    <span>Add Pomodoro</span>
-  </div>
+    <!-- Add button -->
+    <div class="dp-add-btn" id="dp-add-btn" onclick="dpAddPomo()">
+      <span class="dp-add-icon">+</span>
+      <span>Add Pomodoro</span>
+    </div>
 
-  <div class="dp-divider"></div>
+    <div class="dp-divider"></div>
 
-  <!-- Statistics (IDs kept intact for renderStats()) -->
-  <div class="ps-title">Statistics</div>
-  <div class="ps-stat-line">Today <span class="ps-stat-val" id="stat-today">0 pomos · 0 min</span></div>
-  <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
-  <div class="ps-stat-btns">
-    <div class="ps-stat-btn export" onclick="exportStats()">Export JSON</div>
-    <div class="ps-stat-btn" onclick="importStats()">Import JSON</div>
-  </div>
-  <input type="file" id="stats-file-input" accept=".json" style="display:none">
+    <!-- Statistics (IDs kept intact for renderStats()) -->
+    <div class="ps-title">Statistics</div>
+    <div class="ps-stat-line">Today <span class="ps-stat-val" id="stat-today">0 pomos · 0 min</span></div>
+    <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
+    <div class="ps-stat-btns">
+      <div class="ps-stat-btn export" onclick="exportStats()">Export JSON</div>
+      <div class="ps-stat-btn" onclick="importStats()">Import JSON</div>
+    </div>
+    <input type="file" id="stats-file-input" accept=".json" style="display:none">
 
-  <button class="ps-close" id="dp-close-btn">Close &#x2715;</button>
+    <button class="ps-close" id="dp-close-btn">Close &#x2715;</button>
+
+  </div><!-- /dp-scroll-inner -->
 </div>
+
 
 
 <!-- Music settings panel -->
