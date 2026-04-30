@@ -1342,6 +1342,7 @@ var state={phase:'focus',secsLeft:cfg.focus*60,completed:0,running:false,expande
 var ticker=null;
 var planMode = false;  // not persisted — always starts off on page load
 var planIdx  = 0;      // index into plan[] for current pomodoro in planMode
+var _planStarted = false; // true once planMode timer has been started (prevents fresh-load on resume)
 // ── Daily Plan data ──
 var _dpToday = (function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
 var _dpYesterday = (function(){ var d=new Date(); d.setDate(d.getDate()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
@@ -1383,14 +1384,15 @@ function applyView() {
 
 function togglePlay() {
   if (!state.expanded) { state.expanded=true; applyView(); }
-  // Fresh start in planMode: load plan[0]
-  if (!state.running && state.phase==='focus' && state.completed===0 && planMode && plan.length) {
+  // Fresh start in planMode: load plan[0] — skip if already started (i.e. paused)
+  if (!state.running && !_planStarted && planMode && plan.length) {
     planIdx = 0;
     _timerTotal = plan[0].focus * 60;
     state.secsLeft = _timerTotal;
   }
   state.running=!state.running;
   if(state.running){
+    _planStarted = true;
     var pomo=dpActivePomo();
     _timerTotal=(state.phase==='focus' ? (pomo?pomo.focus:cfg.focus) : (pomo?pomo.brk:cfg.brk))*60;
     _timerStart=Date.now()-(_timerTotal-state.secsLeft)*1000;
@@ -1439,7 +1441,7 @@ function tick() {
   }
   renderAll();
 }
-function resetTimer(){clearInterval(ticker);state.running=false;state.phase='focus';state.completed=0;planIdx=0;_timerTotal=(planMode&&plan.length?plan[0].focus:cfg.focus)*60;state.secsLeft=_timerTotal;_timerStart=null;renderAll();}
+function resetTimer(){clearInterval(ticker);state.running=false;state.phase='focus';state.completed=0;planIdx=0;_planStarted=false;_timerTotal=(planMode&&plan.length?plan[0].focus:cfg.focus)*60;state.secsLeft=_timerTotal;_timerStart=null;renderAll();}
 function renderAll(){
   var pomo=dpActivePomo();
   var timeStr=fmt(state.secsLeft),modeStr=state.phase==='focus'?'Focus':'Break';
