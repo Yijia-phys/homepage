@@ -1462,6 +1462,11 @@ function renderAll(){
   else{ subLabel='click to configure'; }
   el('ring-sub').textContent=subLabel;
   renderDots('ring-dots','ring-dot');
+  var togglePM = el('toggle-plan-mode');
+  if (togglePM) {
+    togglePM.style.opacity = state.running ? '0.4' : '';
+    togglePM.style.pointerEvents = state.running ? 'none' : '';
+  }
   drawRing();
   var pb=el('btn-play'); pb.textContent=playTxt; pb.classList.toggle('primary',!state.running);
   var ipb=el('imm-btn-play');
@@ -2118,6 +2123,8 @@ function disablePomoInputs(disabled) {
   el('sl-focus').disabled = disabled;
   el('sl-break').disabled = disabled;
   el('sl-count').disabled = disabled;
+  el('toggle-plan-mode').style.opacity = disabled ? '0.4' : '';
+  el('toggle-plan-mode').style.pointerEvents = disabled ? 'none' : '';
 }
 function openDailyPlan() {
   var dp = el('daily-plan-panel');
