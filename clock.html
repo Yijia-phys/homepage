@@ -778,6 +778,49 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
   font-family: 'JetBrains Mono', monospace;
   font-size: .53rem; letter-spacing: .03em; color: rgba(228,152,40,.88);
 }
+/* ── Heatmap ── */
+.dp-heatmap-wrap { display: flex; flex-direction: column; gap: .6rem; }
+.dp-heatmap-months { display: flex; gap: .7rem; overflow-x: auto; padding-bottom: .25rem;
+  scrollbar-width: thin; scrollbar-color: rgba(212,114,79,.2) transparent; }
+.dp-heatmap-month { display: flex; flex-direction: column; gap: .18rem; flex-shrink: 0; }
+.dp-hm-label { font-family:'JetBrains Mono',monospace; font-size:.52rem;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:.1rem; }
+.dp-hm-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+.dp-hm-cell {
+  width: 10px; height: 10px; border-radius: 2px;
+  background: rgba(255,255,255,.06);
+  cursor: default; transition: transform .1s;
+  position: relative;
+}
+.dp-hm-cell:hover { transform: scale(1.3); z-index: 2; }
+.dp-hm-cell.dp-hm-empty { background: transparent; cursor: default; }
+.dp-hm-cell[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%);
+  background: rgba(14,11,8,.97); border: 1px solid rgba(255,255,255,.14);
+  border-radius: 6px; padding: .28rem .45rem;
+  font-family:'JetBrains Mono',monospace; font-size:.52rem; color:var(--text);
+  white-space: nowrap; pointer-events: none; z-index: 10;
+}
+.dp-hm-thresholds {
+  display: flex; align-items: center; gap: .4rem;
+  font-family:'JetBrains Mono',monospace; font-size:.57rem; color:var(--muted);
+}
+.dp-hm-th-input {
+  width: 34px; background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.13); border-radius: 5px;
+  color: var(--text); font-family:'JetBrains Mono',monospace; font-size:.57rem;
+  padding: .15rem .25rem; text-align: center; outline: none;
+  transition: border-color .15s;
+}
+.dp-hm-th-input:focus { border-color: rgba(212,114,79,.5); }
+.dp-hm-th-input::-webkit-inner-spin-button,
+.dp-hm-th-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+.dp-hm-th-input { -moz-appearance: textfield; }
+.dp-hm-legend { display: flex; align-items: center; gap: .3rem;
+  font-family:'JetBrains Mono',monospace; font-size:.5rem; color:var(--muted); }
+.dp-hm-leg-cell { width:9px; height:9px; border-radius:2px; }
+
 /* ── Daily Plan tab bar ── */
 .dp-tab-bar {
   display: flex; gap: 0;
@@ -966,6 +1009,31 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 
       <div class="ps-stat-line">Today <span class="ps-stat-val" id="stat-today">0 pomos · 0 min</span></div>
       <div class="ps-stat-line">Total <span class="ps-stat-val" id="stat-total">0 pomos · 0 min</span></div>
+
+      <!-- Heatmap -->
+      <div class="dp-heatmap-wrap">
+        <div class="dp-heatmap-months" id="dp-hm-months"></div>
+        <!-- Threshold controls -->
+        <div class="dp-hm-thresholds">
+          <span>Thresholds</span>
+          <span style="color:rgba(255,255,255,.18)">·</span>
+          <input class="dp-hm-th-input" id="dp-hm-t1" type="number" value="25"  min="1" title="Level 1 (min)">
+          <input class="dp-hm-th-input" id="dp-hm-t2" type="number" value="50"  min="1" title="Level 2 (min)">
+          <input class="dp-hm-th-input" id="dp-hm-t3" type="number" value="100" min="1" title="Level 3 (min)">
+          <input class="dp-hm-th-input" id="dp-hm-t4" type="number" value="150" min="1" title="Level 4 (min)">
+          <span style="color:rgba(255,255,255,.18)">min</span>
+          <!-- Legend -->
+          <div class="dp-hm-legend" style="margin-left:.4rem;">
+            <div class="dp-hm-leg-cell" style="background:rgba(212,114,79,.12)"></div>
+            <div class="dp-hm-leg-cell" style="background:rgba(212,114,79,.35)"></div>
+            <div class="dp-hm-leg-cell" style="background:rgba(212,114,79,.60)"></div>
+            <div class="dp-hm-leg-cell" style="background:rgba(212,114,79,.80)"></div>
+            <div class="dp-hm-leg-cell" style="background:rgba(212,114,79,1.00)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dp-divider"></div>
       <div class="ps-stat-btns">
         <div class="ps-stat-btn export" onclick="exportStats()">Export JSON</div>
         <div class="ps-stat-btn" onclick="importStats()">Import JSON</div>
@@ -1500,7 +1568,130 @@ function renderStats() {
   var s = getStats();
   var tdy = el('stat-today'); if (tdy) tdy.textContent = s.todayCount + ' pomos · ' + s.todayMin + ' min';
   var ttl = el('stat-total'); if (ttl) ttl.textContent = s.totalCount + ' pomos · ' + s.totalMin + ' min';
+  renderHeatmap();
 }
+
+function hmThresholds() {
+  function v(id, def) { var n = parseInt((el(id)||{}).value, 10); return (!n||n<1)?def:n; }
+  return [v('dp-hm-t1',25), v('dp-hm-t2',50), v('dp-hm-t3',100), v('dp-hm-t4',150)];
+}
+
+function hmColor(mins, thresholds) {
+  if (!mins) return null;
+  var alphas = [.12, .35, .60, .80, 1.00];
+  var level = 0;
+  for (var i = 0; i < thresholds.length; i++) { if (mins >= thresholds[i]) level = i+1; }
+  return 'rgba(212,114,79,' + alphas[level] + ')';
+}
+
+function renderHeatmap() {
+  var wrap = el('dp-hm-months');
+  if (!wrap) return;
+  var stats   = SharedUI.load('pomo-stats', []);
+  var thresh  = hmThresholds();
+
+  // Aggregate minutes per date
+  var byDate = {};
+  stats.forEach(function(s){ byDate[s.date] = (byDate[s.date]||0) + s.duration; });
+
+  // Build last 6 months list (current month + 5 before)
+  var today = new Date(); today.setHours(0,0,0,0);
+  var months = [];
+  for (var m = 5; m >= 0; m--) {
+    var d = new Date(today.getFullYear(), today.getMonth() - m, 1);
+    months.push({ year: d.getFullYear(), month: d.getMonth() });
+  }
+
+  var DAYS = ['M','T','W','T','F','S','S']; // Mon–Sun
+  var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  wrap.innerHTML = '';
+  months.forEach(function(mo) {
+    var col = document.createElement('div');
+    col.className = 'dp-heatmap-month';
+
+    var lbl = document.createElement('div');
+    lbl.className = 'dp-hm-label';
+    lbl.textContent = MONTH_NAMES[mo.month] + ' ' + mo.year;
+    col.appendChild(lbl);
+
+    var grid = document.createElement('div');
+    grid.className = 'dp-hm-grid';
+
+    // Day-of-week headers
+    DAYS.forEach(function(d) {
+      var h = document.createElement('div');
+      h.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:.45rem;color:rgba(255,255,255,.25);text-align:center;line-height:10px;';
+      h.textContent = d;
+      grid.appendChild(h);
+    });
+
+    // First day of month: what weekday? (0=Sun … 6=Sat → remap to Mon-based 0–6)
+    var firstDay = new Date(mo.year, mo.month, 1);
+    var offset = (firstDay.getDay() + 6) % 7; // Mon=0
+
+    // Empty cells before first day
+    for (var i = 0; i < offset; i++) {
+      var empty = document.createElement('div');
+      empty.className = 'dp-hm-cell dp-hm-empty';
+      grid.appendChild(empty);
+    }
+
+    // Days in month
+    var daysInMonth = new Date(mo.year, mo.month+1, 0).getDate();
+    var isCurrentMonth = (mo.year === today.getFullYear() && mo.month === today.getMonth());
+
+    for (var day = 1; day <= daysInMonth; day++) {
+      var cell = document.createElement('div');
+      cell.className = 'dp-hm-cell';
+      var dateStr = mo.year + '-' + String(mo.month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+      var cellDate = new Date(mo.year, mo.month, day);
+      var isFuture = cellDate > today;
+
+      if (isFuture) {
+        cell.style.opacity = '.25';
+      } else {
+        var mins = byDate[dateStr] || 0;
+        var color = hmColor(mins, thresh);
+        if (color) cell.style.background = color;
+        // Tooltip
+        var pomosOnDay = stats.filter(function(s){ return s.date === dateStr; }).length;
+        var tipDate = MONTH_NAMES[mo.month] + ' ' + day;
+        cell.setAttribute('data-tip', mins ? tipDate + ' · ' + mins + ' min · ' + pomosOnDay + ' pomos' : tipDate + ' · rest day');
+      }
+
+      // Highlight today
+      if (isCurrentMonth && day === today.getDate()) {
+        cell.style.outline = '1px solid rgba(212,114,79,.7)';
+        cell.style.outlineOffset = '1px';
+      }
+
+      grid.appendChild(cell);
+    }
+
+    col.appendChild(grid);
+    wrap.appendChild(col);
+  });
+
+  // Wire threshold inputs to re-render
+  ['dp-hm-t1','dp-hm-t2','dp-hm-t3','dp-hm-t4'].forEach(function(id){
+    var inp = el(id);
+    if (inp && !inp._hmWired) {
+      inp._hmWired = true;
+      inp.oninput = function(){ renderHeatmap(); SharedUI.save('pomo-hm-thresholds', hmThresholds()); };
+    }
+  });
+}
+
+// Restore saved thresholds on load
+(function(){
+  var saved = SharedUI.load('pomo-hm-thresholds', null);
+  if (saved && Array.isArray(saved)) {
+    ['dp-hm-t1','dp-hm-t2','dp-hm-t3','dp-hm-t4'].forEach(function(id, i){
+      var inp = el(id); if (inp && saved[i]) inp.value = saved[i];
+    });
+  }
+})();
 function exportStats() {
   var s = getStats();
   var blob = new Blob([JSON.stringify(s.sessions, null, 2)], { type: 'application/json' });
