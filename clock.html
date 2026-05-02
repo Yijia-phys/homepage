@@ -820,6 +820,15 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 .dp-hm-legend { display: flex; align-items: center; gap: .3rem;
   font-family:'JetBrains Mono',monospace; font-size:.5rem; color:var(--muted); }
 .dp-hm-leg-cell { width:9px; height:9px; border-radius:2px; }
+.dp-hm-header { display:flex; align-items:center; justify-content:space-between; }
+.dp-hm-seg { display:flex; gap:2px; background:rgba(255,255,255,.05); border-radius:6px; padding:2px; }
+.dp-hm-seg-btn {
+  font-family:'JetBrains Mono',monospace; font-size:.5rem; letter-spacing:.05em;
+  color:var(--muted); padding:.2rem .45rem; border-radius:4px;
+  cursor:pointer; transition:background .12s,color .12s; user-select:none;
+}
+.dp-hm-seg-btn:hover { color:rgba(255,255,255,.7); }
+.dp-hm-seg-btn.dp-hm-seg-active { background:rgba(212,114,79,.25); color:var(--accent); }
 
 /* ── Daily Plan tab bar ── */
 .dp-tab-bar {
@@ -1012,6 +1021,15 @@ body.immersive-mode #music-playlist.open { transform:translateX(0); }
 
       <!-- Heatmap -->
       <div class="dp-heatmap-wrap">
+        <div class="dp-hm-header">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);">Activity</span>
+          <div class="dp-hm-seg" id="dp-hm-seg">
+            <div class="dp-hm-seg-btn" onclick="dpHmSetMonths(3)">3M</div>
+            <div class="dp-hm-seg-btn" onclick="dpHmSetMonths(4)">4M</div>
+            <div class="dp-hm-seg-btn" onclick="dpHmSetMonths(5)">5M</div>
+            <div class="dp-hm-seg-btn" onclick="dpHmSetMonths(6)">6M</div>
+          </div>
+        </div>
         <div class="dp-heatmap-months" id="dp-hm-months"></div>
         <!-- Threshold controls -->
         <div class="dp-hm-thresholds">
@@ -1584,11 +1602,27 @@ function hmColor(mins, thresholds) {
   return 'rgba(212,114,79,' + alphas[level] + ')';
 }
 
+var _dpHmMonths = SharedUI.load('pomo-hm-months', 3);
+
+function dpHmSetMonths(n) {
+  _dpHmMonths = n;
+  SharedUI.save('pomo-hm-months', n);
+  renderHeatmap();
+}
+
 function renderHeatmap() {
   var wrap = el('dp-hm-months');
   if (!wrap) return;
   var stats   = SharedUI.load('pomo-stats', []);
   var thresh  = hmThresholds();
+
+  // Update segmented control active state
+  var seg = el('dp-hm-seg');
+  if (seg) {
+    var btns = seg.querySelectorAll('.dp-hm-seg-btn');
+    var vals = [3,4,5,6];
+    btns.forEach(function(b,i){ b.classList.toggle('dp-hm-seg-active', vals[i]===_dpHmMonths); });
+  }
 
   // Aggregate minutes per date
   var byDate = {};
@@ -1597,7 +1631,7 @@ function renderHeatmap() {
   // Build last 6 months list (current month + 5 before)
   var today = new Date(); today.setHours(0,0,0,0);
   var months = [];
-  for (var m = 5; m >= 0; m--) {
+  for (var m = _dpHmMonths - 1; m >= 0; m--) {
     var d = new Date(today.getFullYear(), today.getMonth() - m, 1);
     months.push({ year: d.getFullYear(), month: d.getMonth() });
   }
